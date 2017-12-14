@@ -74,6 +74,7 @@ public:
 
 	//{{{ In table variables
 	virtual void setIp(std::string value);
+    void setApiKey(std::string value) { _apiKey = value; saveVariable(1, _apiKey); }
 	//}}}
 
 	virtual std::string handleCliCommand(std::string command);
@@ -86,7 +87,7 @@ public:
 	virtual std::string getFirmwareVersionString(int32_t firmwareVersion);
     virtual bool firmwareUpdateAvailable() { return false; }
 
-	void packetReceived(std::shared_ptr<NanoleafPacket> packet);
+    void worker();
 
 	//RPC methods
 	/**
@@ -110,10 +111,14 @@ public:
 	virtual PVariable setValue(BaseLib::PRpcClientInfo clientInfo, uint32_t channel, std::string valueKey, PVariable value, bool wait);
 	//End RPC methods
 protected:
+    //{{{ In table variables
+        std::string _apiKey = "";
+    //}}}
+
 	std::shared_ptr<BaseLib::HttpClient> _httpClient;
 
-	std::shared_ptr<BaseLib::Rpc::RpcEncoder> _binaryEncoder;
-	std::shared_ptr<BaseLib::Rpc::RpcDecoder> _binaryDecoder;
+	std::shared_ptr<BaseLib::Rpc::JsonEncoder> _jsonEncoder;
+	std::shared_ptr<BaseLib::Rpc::JsonDecoder> _jsonDecoder;
 
 	virtual std::shared_ptr<BaseLib::Systems::ICentral> getCentral();
 	void getValuesFromPacket(std::shared_ptr<NanoleafPacket> packet, std::vector<FrameValues>& frameValue);
@@ -124,6 +129,8 @@ protected:
 
 	virtual void loadVariables(BaseLib::Systems::ICentral* central, std::shared_ptr<BaseLib::Database::DataTable>& rows);
     virtual void saveVariables();
+
+    void packetReceived(PVariable json);
 
     // {{{ Hooks
 		/**

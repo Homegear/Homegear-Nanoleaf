@@ -4,10 +4,6 @@ project(homegear_nanoleaf)
 set(CMAKE_CXX_STANDARD 11)
 
 set(SOURCE_FILES
-        src/PhysicalInterfaces/INanoleafInterface.cpp
-        src/PhysicalInterfaces/INanoleafInterface.h
-        src/PhysicalInterfaces/NanoleafInterface.cpp
-        src/PhysicalInterfaces/NanoleafInterface.h
         src/Factory.cpp
         src/Factory.h
         src/GD.cpp

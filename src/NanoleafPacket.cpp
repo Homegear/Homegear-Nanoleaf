@@ -37,13 +37,9 @@ NanoleafPacket::NanoleafPacket()
 
 }
 
-NanoleafPacket::NanoleafPacket(Category category, int32_t senderAddress, int32_t destinationAddress, uint8_t messageType, PVariable json, int64_t timeReceived)
+NanoleafPacket::NanoleafPacket(PVariable json, int64_t timeReceived)
 {
-	_category = category;
 	_timeReceived = timeReceived;
-	_senderAddress = senderAddress;
-	_destinationAddress = destinationAddress;
-	_messageType = messageType;
     _json = json;
 }
 

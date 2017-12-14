@@ -673,7 +673,7 @@ std::string NanoleafCentral::handleCliCommand(std::string command)
 			}
 
             searchDevicesThread(false);
-			stringStream << "Search completed." << std::endl;
+			stringStream << "Search completed. Please press the power button for three seconds on all newly added Nanoleafs." << std::endl;
 			return stringStream.str();
 		}
 		else return "Unknown command.\n";
@@ -737,9 +737,11 @@ void NanoleafCentral::worker()
 			std::this_thread::sleep_for(std::chrono::seconds(1));
 		}
 
-		std::chrono::milliseconds sleepingTime(1000);
+		std::chrono::milliseconds sleepingTime(5000);
 		uint32_t counter = 0;
-		uint32_t countsPer10Minutes = BaseLib::HelperFunctions::getRandomNumber(10, 600);
+		uint32_t countsPer10Minutes = BaseLib::HelperFunctions::getRandomNumber(5, 120);
+        uint64_t lastPeer;
+        lastPeer = 0;
 
 		while(!_stopWorkerThread && !_shuttingDown)
 		{
@@ -750,11 +752,39 @@ void NanoleafCentral::worker()
 				// Update devices (most importantly the IP address)
 				if(counter > countsPer10Minutes)
 				{
-					countsPer10Minutes = 600;
-					counter = 0;
+                    counter = 0;
+                    _peersMutex.lock();
+                    if(_peersById.size() > 0)
+                    {
+                        int32_t windowTimePerPeer = 5000 / _peersById.size(); //Poll every 5 seconds
+                        if(windowTimePerPeer > 2) windowTimePerPeer -= 2;
+                        sleepingTime = std::chrono::milliseconds(windowTimePerPeer);
+                        countsPer10Minutes = 600000 / windowTimePerPeer;
+                    }
+                    else countsPer10Minutes = 100;
+                    _peersMutex.unlock();
                     searchDevicesThread(true);
 				}
 				counter++;
+                _peersMutex.lock();
+                if(!_peersById.empty())
+                {
+                    if(!_peersById.empty())
+                    {
+                        std::map<uint64_t, std::shared_ptr<BaseLib::Systems::Peer>>::iterator nextPeer = _peersById.find(lastPeer);
+                        if(nextPeer != _peersById.end())
+                        {
+                            nextPeer++;
+                            if(nextPeer == _peersById.end()) nextPeer = _peersById.begin();
+                        }
+                        else nextPeer = _peersById.begin();
+                        lastPeer = nextPeer->first;
+                    }
+                }
+                _peersMutex.unlock();
+                std::shared_ptr<NanoleafPeer> peer(getPeer(lastPeer));
+                if(peer && !peer->deleting) peer->worker();
+                counter++;
 			}
 			catch(const std::exception& ex)
 			{

@@ -58,15 +58,15 @@ std::shared_ptr<BaseLib::Systems::ICentral> NanoleafPeer::getCentral()
 
 NanoleafPeer::NanoleafPeer(uint32_t parentID, IPeerEventSink* eventHandler) : Peer(GD::bl, parentID, eventHandler)
 {
-	_binaryEncoder.reset(new BaseLib::Rpc::RpcEncoder(GD::bl));
-	_binaryDecoder.reset(new BaseLib::Rpc::RpcDecoder(GD::bl));
+	_jsonEncoder.reset(new BaseLib::Rpc::JsonEncoder(GD::bl));
+	_jsonDecoder.reset(new BaseLib::Rpc::JsonDecoder(GD::bl));
 	_saveTeam = true;
 }
 
 NanoleafPeer::NanoleafPeer(int32_t id, int32_t address, std::string serialNumber, uint32_t parentID, IPeerEventSink* eventHandler) : Peer(GD::bl, id, address, serialNumber, parentID, eventHandler)
 {
-	_binaryEncoder.reset(new BaseLib::Rpc::RpcEncoder(GD::bl));
-	_binaryDecoder.reset(new BaseLib::Rpc::RpcDecoder(GD::bl));
+    _jsonEncoder.reset(new BaseLib::Rpc::JsonEncoder(GD::bl));
+    _jsonDecoder.reset(new BaseLib::Rpc::JsonDecoder(GD::bl));
 	_saveTeam = true;
 }
 
@@ -100,6 +100,61 @@ void NanoleafPeer::setIp(std::string value)
 	{
 		GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
 	}
+}
+
+void NanoleafPeer::worker()
+{
+    try
+    {
+        if(deleting || !_httpClient || _ip.empty()) return;
+
+        bool requestNewApiKey = false;
+        if(!_apiKey.empty())
+        {
+            BaseLib::Http http;
+            _httpClient->get("/api/v1/" + _apiKey + "/", http);
+            if(http.getHeader().responseCode >= 200 && http.getHeader().responseCode < 300)
+            {
+                packetReceived(_jsonDecoder->decode(http.getContent()));
+            }
+            else if(http.getHeader().responseCode == 401) requestNewApiKey = true;
+            else _bl->out.printWarning("Warning: Unhandled HTTP code received from Nanoleaf: " + std::to_string(http.getHeader().responseCode));
+        }
+        else requestNewApiKey = true;
+
+        if(requestNewApiKey)
+        {
+            BaseLib::Http http;
+            std::string postRequest = "POST /api/v1/new HTTP/1.1\r\nUser-Agent: Homegear\r\nHost: " + _ip + ":16021" + "\r\nConnection: Close\r\nContent-Type: application/json\r\nContent-Length: 0\r\n\r\n";
+            _httpClient->sendRequest(postRequest, http, false);
+            if(http.getContentSize() == 0)
+            {
+                _bl->out.printWarning("Warning: Peer " + std::to_string(_peerID) + " has no auth token set. Please press the power button on your Nanoleaf controller for three seconds.");
+            }
+            else
+            {
+                auto json = _jsonDecoder->decode(http.getContent());
+                auto authTokenIterator = json->structValue->find("auth_token");
+                if(authTokenIterator != json->structValue->end())
+                {
+                    setApiKey(BaseLib::HelperFunctions::stripNonAlphaNumeric(authTokenIterator->second->stringValue));
+                    _bl->out.printInfo("Info: Peer " + std::to_string(_peerID) + " got new auth token.");
+                }
+            }
+        }
+    }
+    catch(const std::exception& ex)
+    {
+        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+    }
+    catch(BaseLib::Exception& ex)
+    {
+        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
+    }
+    catch(...)
+    {
+        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
+    }
 }
 
 std::string NanoleafPeer::handleCliCommand(std::string command)
@@ -165,6 +220,16 @@ void NanoleafPeer::loadVariables(BaseLib::Systems::ICentral* central, std::share
 		if(!rows) rows = _bl->db->getPeerVariables(_peerID);
 		Peer::loadVariables(central, rows);
 
+        for(BaseLib::Database::DataTable::iterator row = rows->begin(); row != rows->end(); ++row)
+        {
+            switch(row->second.at(2)->intValue)
+            {
+                case 1:
+                    _apiKey = row->second.at(4)->textValue;
+                    break;
+            }
+        }
+
         _httpClient.reset(new BaseLib::HttpClient(GD::bl, _ip, 16021, false));
         _httpClient->setTimeout(readTimeout);
 	}
@@ -226,6 +291,7 @@ void NanoleafPeer::saveVariables()
 	{
 		if(_peerID == 0) return;
 		Peer::saveVariables();
+        saveVariable(1, _apiKey);
 	}
 	catch(const std::exception& ex)
     {
@@ -317,7 +383,7 @@ void NanoleafPeer::getValuesFromPacket(std::shared_ptr<NanoleafPacket> packet, s
     }
 }
 
-void NanoleafPeer::packetReceived(std::shared_ptr<NanoleafPacket> packet)
+void NanoleafPeer::packetReceived(PVariable json)
 {
 	try
 	{
