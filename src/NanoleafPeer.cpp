@@ -58,6 +58,8 @@ std::shared_ptr<BaseLib::Systems::ICentral> NanoleafPeer::getCentral()
 
 NanoleafPeer::NanoleafPeer(uint32_t parentID, IPeerEventSink* eventHandler) : Peer(GD::bl, parentID, eventHandler)
 {
+    _binaryEncoder.reset(new BaseLib::Rpc::RpcEncoder(GD::bl));
+    _binaryDecoder.reset(new BaseLib::Rpc::RpcDecoder(GD::bl));
 	_jsonEncoder.reset(new BaseLib::Rpc::JsonEncoder(GD::bl));
 	_jsonDecoder.reset(new BaseLib::Rpc::JsonDecoder(GD::bl));
 	_saveTeam = true;
@@ -65,6 +67,8 @@ NanoleafPeer::NanoleafPeer(uint32_t parentID, IPeerEventSink* eventHandler) : Pe
 
 NanoleafPeer::NanoleafPeer(int32_t id, int32_t address, std::string serialNumber, uint32_t parentID, IPeerEventSink* eventHandler) : Peer(GD::bl, id, address, serialNumber, parentID, eventHandler)
 {
+    _binaryEncoder.reset(new BaseLib::Rpc::RpcEncoder(GD::bl));
+    _binaryDecoder.reset(new BaseLib::Rpc::RpcDecoder(GD::bl));
     _jsonEncoder.reset(new BaseLib::Rpc::JsonEncoder(GD::bl));
     _jsonDecoder.reset(new BaseLib::Rpc::JsonDecoder(GD::bl));
 	_saveTeam = true;
@@ -363,11 +367,90 @@ bool NanoleafPeer::getAllValuesHook2(PRpcClientInfo clientInfo, PParameter param
     return false;
 }
 
-void NanoleafPeer::getValuesFromPacket(std::shared_ptr<NanoleafPacket> packet, std::vector<FrameValues>& frameValues)
+void NanoleafPeer::getValuesFromPacket(BaseLib::PVariable json, std::vector<FrameValues>& frameValues)
 {
 	try
 	{
+        if(!_rpcDevice) return;
+        //equal_range returns all elements with "0" or an unknown element as argument
+        if(_rpcDevice->packetsByMessageType.find(1) == _rpcDevice->packetsByMessageType.end()) return;
+        std::pair<PacketsByMessageType::iterator, PacketsByMessageType::iterator> range = _rpcDevice->packetsByMessageType.equal_range(1);
+        if(range.first == _rpcDevice->packetsByMessageType.end()) return;
+        PacketsByMessageType::iterator i = range.first;
+        do
+        {
+            FrameValues currentFrameValues;
+            PPacket frame(i->second);
+            if(!frame) continue;
+            int32_t channel = -1;
+            if(frame->channel > -1) channel = frame->channel;
+            currentFrameValues.frameID = frame->id;
 
+            for(JsonPayloads::iterator j = frame->jsonPayloads.begin(); j != frame->jsonPayloads.end(); ++j)
+            {
+                BaseLib::PVariable currentJson = json;
+                if(currentJson->structValue->find((*j)->key) == currentJson->structValue->end()) continue;
+                currentJson = currentJson->structValue->operator []((*j)->key);
+                if(!(*j)->subkey.empty())
+                {
+                    if(currentJson->structValue->find((*j)->subkey) == currentJson->structValue->end()) continue;
+                    currentJson = currentJson->structValue->operator[]((*j)->subkey);
+                    auto valueIterator = currentJson->structValue->find("value");
+                    if(valueIterator != currentJson->structValue->end()) currentJson = valueIterator->second;
+                }
+
+                for(std::vector<PParameter>::iterator k = frame->associatedVariables.begin(); k != frame->associatedVariables.end(); ++k)
+                {
+                    if((*k)->physical->groupId != (*j)->parameterId) continue;
+                    currentFrameValues.parameterSetType = (*k)->parent()->type();
+                    bool setValues = false;
+                    if(currentFrameValues.paramsetChannels.empty()) //Fill paramsetChannels
+                    {
+                        int32_t startChannel = (channel < 0) ? 0 : channel;
+                        int32_t endChannel;
+                        //When fixedChannel is -2 (means '*') cycle through all channels
+                        if(frame->channel == -2)
+                        {
+                            startChannel = 0;
+                            endChannel = _rpcDevice->functions.rbegin()->first;
+                        }
+                        else endChannel = startChannel;
+                        for(int32_t l = startChannel; l <= endChannel; l++)
+                        {
+                            Functions::iterator functionIterator = _rpcDevice->functions.find(l);
+                            if(functionIterator == _rpcDevice->functions.end()) continue;
+                            PParameterGroup parameterGroup = functionIterator->second->getParameterGroup(currentFrameValues.parameterSetType);
+                            if(!parameterGroup || parameterGroup->parameters.find((*k)->id) == parameterGroup->parameters.end()) continue;
+                            currentFrameValues.paramsetChannels.push_back(l);
+                            currentFrameValues.values[(*k)->id].channels.push_back(l);
+                            setValues = true;
+                        }
+                    }
+                    else //Use paramsetChannels
+                    {
+                        for(std::list<uint32_t>::const_iterator l = currentFrameValues.paramsetChannels.begin(); l != currentFrameValues.paramsetChannels.end(); ++l)
+                        {
+                            Functions::iterator functionIterator = _rpcDevice->functions.find(*l);
+                            if(functionIterator == _rpcDevice->functions.end()) continue;
+                            PParameterGroup parameterGroup = functionIterator->second->getParameterGroup(currentFrameValues.parameterSetType);
+                            if(!parameterGroup || parameterGroup->parameters.find((*k)->id) == parameterGroup->parameters.end()) continue;
+                            currentFrameValues.values[(*k)->id].channels.push_back(*l);
+                            setValues = true;
+                        }
+                    }
+
+                    if(setValues)
+                    {
+                        //This is a little nasty and costs a lot of resources, but we need to run the data through the packet converter
+                        std::vector<uint8_t> encodedData;
+                        _binaryEncoder->encodeResponse(currentJson, encodedData);
+                        PVariable data = (*k)->convertFromPacket(encodedData, true);
+                        (*k)->convertToPacket(data, currentFrameValues.values[(*k)->id].value);
+                    }
+                }
+            }
+            if(!currentFrameValues.values.empty()) frameValues.push_back(currentFrameValues);
+        } while(++i != range.second && i != _rpcDevice->packetsByMessageType.end());
 	}
 	catch(const std::exception& ex)
     {
@@ -387,7 +470,75 @@ void NanoleafPeer::packetReceived(PVariable json)
 {
 	try
 	{
+        setLastPacketReceived();
+        std::vector<FrameValues> frameValues;
+        getValuesFromPacket(json, frameValues);
+        std::map<uint32_t, std::shared_ptr<std::vector<std::string>>> valueKeys;
+        std::map<uint32_t, std::shared_ptr<std::vector<PVariable>>> rpcValues;
 
+        //Loop through all matching frames
+        for(std::vector<FrameValues>::iterator a = frameValues.begin(); a != frameValues.end(); ++a)
+        {
+            PPacket frame;
+            if(!a->frameID.empty()) frame = _rpcDevice->packetsById.at(a->frameID);
+
+            for(std::map<std::string, FrameValue>::iterator i = a->values.begin(); i != a->values.end(); ++i)
+            {
+                for(std::list<uint32_t>::const_iterator j = a->paramsetChannels.begin(); j != a->paramsetChannels.end(); ++j)
+                {
+                    if(std::find(i->second.channels.begin(), i->second.channels.end(), *j) == i->second.channels.end()) continue;
+
+                    BaseLib::Systems::RpcConfigurationParameter& parameter = valuesCentral[*j][i->first];
+                    if(parameter.equals(i->second.value)) continue;
+
+                    if(!valueKeys[*j] || !rpcValues[*j])
+                    {
+                        valueKeys[*j].reset(new std::vector<std::string>());
+                        rpcValues[*j].reset(new std::vector<PVariable>());
+                    }
+
+                    parameter.setBinaryData(i->second.value);
+                    if(parameter.databaseId > 0) saveParameter(parameter.databaseId, i->second.value);
+                    else saveParameter(0, ParameterGroup::Type::Enum::variables, *j, i->first, i->second.value);
+                    if(_bl->debugLevel >= 4) GD::out.printInfo("Info: " + i->first + " of peer " + std::to_string(_peerID) + " with serial number " + _serialNumber + ":" + std::to_string(*j) + " was set to 0x" + BaseLib::HelperFunctions::getHexString(i->second.value) + ".");
+
+                    if(parameter.rpcParameter)
+                    {
+                        //Process service messages
+                        if(parameter.rpcParameter->service && !i->second.value.empty())
+                        {
+                            if(parameter.rpcParameter->logical->type == ILogical::Type::Enum::tEnum)
+                            {
+                                serviceMessages->set(i->first, i->second.value.at(i->second.value.size() - 1), *j);
+                            }
+                            else if(parameter.rpcParameter->logical->type == ILogical::Type::Enum::tBoolean)
+                            {
+                                if(parameter.rpcParameter->id == "REACHABLE")
+                                {
+                                    bool value = !((bool)i->second.value.at(i->second.value.size() - 1));
+                                    serviceMessages->setUnreach(value, false);
+                                }
+                                else serviceMessages->set(i->first, (bool)i->second.value.at(i->second.value.size() - 1));
+                            }
+                        }
+
+                        valueKeys[*j]->push_back(i->first);
+                        rpcValues[*j]->push_back(parameter.rpcParameter->convertFromPacket(i->second.value, true));
+                    }
+                }
+            }
+
+            if(!rpcValues.empty())
+            {
+                for(std::map<uint32_t, std::shared_ptr<std::vector<std::string>>>::const_iterator j = valueKeys.begin(); j != valueKeys.end(); ++j)
+                {
+                    if(j->second->empty()) continue;
+                    std::string address(_serialNumber + ":" + std::to_string(j->first));
+                    raiseEvent(_peerID, j->first, j->second, rpcValues.at(j->first));
+                    raiseRPCEvent(_peerID, j->first, address, j->second, rpcValues.at(j->first));
+                }
+            }
+        }
 	}
 	catch(const std::exception& ex)
     {
@@ -555,8 +706,135 @@ PVariable NanoleafPeer::setValue(BaseLib::PRpcClientInfo clientInfo, uint32_t ch
 {
 	try
 	{
+        Peer::setValue(clientInfo, channel, valueKey, value, wait); //Ignore result, otherwise setHomegerValue might not be executed
+        if(_disposing) return Variable::createError(-32500, "Peer is disposing.");
+        if(valueKey.empty()) return Variable::createError(-5, "Value key is empty.");
+        if(channel == 0 && serviceMessages->set(valueKey, value->booleanValue)) return PVariable(new Variable(VariableType::tVoid));
+        std::unordered_map<uint32_t, std::unordered_map<std::string, RpcConfigurationParameter>>::iterator channelIterator = valuesCentral.find(channel);
+        if(channelIterator == valuesCentral.end()) return Variable::createError(-2, "Unknown channel.");
+        std::unordered_map<std::string, RpcConfigurationParameter>::iterator parameterIterator = channelIterator->second.find(valueKey);
+        if(parameterIterator == valuesCentral[channel].end()) return Variable::createError(-5, "Unknown parameter.");
+        PParameter rpcParameter = parameterIterator->second.rpcParameter;
+        if(!rpcParameter) return Variable::createError(-5, "Unknown parameter.");
+        if(rpcParameter->logical->type == ILogical::Type::tAction && !value->booleanValue) return Variable::createError(-5, "Parameter of type action cannot be set to \"false\".");
+        BaseLib::Systems::RpcConfigurationParameter& parameter = parameterIterator->second;
+        std::shared_ptr<std::vector<std::string>> valueKeys(new std::vector<std::string>());
+        std::shared_ptr<std::vector<PVariable>> values(new std::vector<PVariable>());
 
-		return PVariable(new Variable(VariableType::tVoid));
+        if(rpcParameter->physical->operationType == IPhysical::OperationType::Enum::store)
+        {
+            std::vector<uint8_t> parameterData;
+            rpcParameter->convertToPacket(value, parameterData);
+            parameter.setBinaryData(parameterData);
+            if(parameter.databaseId > 0) saveParameter(parameter.databaseId, parameterData);
+            else saveParameter(0, ParameterGroup::Type::Enum::variables, channel, valueKey, parameterData);
+
+            value = rpcParameter->convertFromPacket(parameterData, false);
+            if(rpcParameter->readable)
+            {
+                valueKeys->push_back(valueKey);
+                values->push_back(value);
+            }
+            if(!valueKeys->empty()) raiseRPCEvent(_peerID, channel, _serialNumber + ":" + std::to_string(channel), valueKeys, values);
+            return PVariable(new Variable(VariableType::tVoid));
+        }
+        else if(rpcParameter->physical->operationType != IPhysical::OperationType::Enum::command) return Variable::createError(-6, "Parameter is not settable.");
+        if(rpcParameter->setPackets.empty()) return Variable::createError(-6, "parameter is read only");
+        std::string setRequest = rpcParameter->setPackets.front()->id;
+        PacketsById::iterator packetIterator = _rpcDevice->packetsById.find(setRequest);
+        if(packetIterator == _rpcDevice->packetsById.end()) return Variable::createError(-6, "No frame was found for parameter " + valueKey);
+        PPacket frame = packetIterator->second;
+        std::vector<uint8_t> parameterData;
+        rpcParameter->convertToPacket(value, parameterData);
+        parameter.setBinaryData(parameterData);
+        if(parameter.databaseId > 0) saveParameter(parameter.databaseId, parameterData);
+        else saveParameter(0, ParameterGroup::Type::Enum::variables, channel, valueKey, parameterData);
+
+        value = rpcParameter->convertFromPacket(parameterData, false);
+        if(_bl->debugLevel > 4) GD::out.printDebug("Debug: " + valueKey + " of peer " + std::to_string(_peerID) + " with serial number " + _serialNumber + ":" + std::to_string(channel) + " was set to " + BaseLib::HelperFunctions::getHexString(parameterData) + ", " + value->print(false, false, true) + ".");
+
+        valueKeys->push_back(valueKey);
+        values->push_back(value);
+
+        if(!noSending)
+        {
+            PVariable json = std::make_shared<Variable>(VariableType::tStruct);
+            for(JsonPayloads::iterator i = frame->jsonPayloads.begin(); i != frame->jsonPayloads.end(); ++i)
+            {
+                if((*i)->constValueIntegerSet)
+                {
+                    if((*i)->key.empty()) continue;
+                    PVariable fieldElement;
+                    if((*i)->subkey.empty()) json->structValue->operator[]((*i)->key) = PVariable(new Variable((*i)->constValueInteger));
+                    else
+                    {
+                        auto keyIterator = json->structValue->find((*i)->key);
+                        if(keyIterator == json->structValue->end()) keyIterator = json->structValue->emplace((*i)->key, std::make_shared<Variable>(VariableType::tStruct)).first;
+                        keyIterator->second->structValue->emplace((*i)->subkey, std::make_shared<Variable>((*i)->constValueInteger));
+                    }
+                    continue;
+                }
+                if((*i)->constValueBooleanSet)
+                {
+                    if((*i)->key.empty()) continue;
+                    if((*i)->subkey.empty()) json->structValue->operator[]((*i)->key) = PVariable(new Variable((*i)->constValueBoolean));
+                    else
+                    {
+                        auto keyIterator = json->structValue->find((*i)->key);
+                        if(keyIterator == json->structValue->end()) keyIterator = json->structValue->emplace((*i)->key, std::make_shared<Variable>(VariableType::tStruct)).first;
+                        keyIterator->second->structValue->emplace((*i)->subkey, std::make_shared<Variable>((*i)->constValueBoolean));
+                    }
+                    continue;
+                }
+                //We can't just search for param, because it is ambiguous (see for example LEVEL for HM-CC-TC).
+                if((*i)->parameterId == rpcParameter->physical->groupId)
+                {
+                    if((*i)->key.empty()) continue;
+                    std::vector<uint8_t> parameterData = parameter.getBinaryData();
+                    if((*i)->subkey.empty()) json->structValue->operator[]((*i)->key) = _binaryDecoder->decodeResponse(parameterData); //Parameter already is in packet format. Just convert it from RPC to BaseLib::Variable.
+                    else
+                    {
+                        auto keyIterator = json->structValue->find((*i)->key);
+                        if(keyIterator == json->structValue->end()) keyIterator = json->structValue->emplace((*i)->key, std::make_shared<Variable>(VariableType::tStruct)).first;
+                        keyIterator->second->structValue->emplace((*i)->subkey, _binaryDecoder->decodeResponse(parameterData));
+                    }
+                }
+                    //Search for all other parameters
+                else
+                {
+                    bool paramFound = false;
+                    for(std::unordered_map<std::string, BaseLib::Systems::RpcConfigurationParameter>::iterator j = valuesCentral[channel].begin(); j != valuesCentral[channel].end(); ++j)
+                    {
+                        if(!j->second.rpcParameter) continue;
+                        if((*i)->parameterId == j->second.rpcParameter->physical->groupId)
+                        {
+                            if((*i)->key.empty()) continue;
+                            std::vector<uint8_t> parameterData = j->second.getBinaryData();
+                            if((*i)->subkey.empty()) json->structValue->operator[]((*i)->key) = _binaryDecoder->decodeResponse(parameterData); //Parameter already is in packet format. Just convert it from RPC to BaseLib::Variable.
+                            else  json->structValue->operator[]((*i)->key)->structValue->operator[]((*i)->subkey) = _binaryDecoder->decodeResponse(parameterData);
+                            paramFound = true;
+                            break;
+                        }
+                    }
+                    if(!paramFound) GD::out.printError("Error constructing packet. param \"" + (*i)->parameterId + "\" not found. Peer: " + std::to_string(_peerID) + " Serial number: " + _serialNumber + " Frame: " + frame->id);
+                }
+            }
+
+            std::string content;
+            _jsonEncoder->encode(json, content);
+
+            BaseLib::Http http;
+            std::string postRequest = "PUT /api/v1/" + _apiKey + "/" + frame->function1 + " HTTP/1.1\r\nUser-Agent: Homegear\r\nHost: " + _ip + ":16021" + "\r\nConnection: Close\r\nContent-Type: application/json\r\nContent-Length: " + std::to_string(content.size()) + "\r\n\r\n" + content;
+            _httpClient->sendRequest(postRequest, http, false);
+        }
+
+        if(!valueKeys->empty())
+        {
+            raiseEvent(_peerID, channel, valueKeys, values);
+            raiseRPCEvent(_peerID, channel, _serialNumber + ":" + std::to_string(channel), valueKeys, values);
+        }
+
+        return PVariable(new Variable(VariableType::tVoid));
 	}
 	catch(const std::exception& ex)
     {
