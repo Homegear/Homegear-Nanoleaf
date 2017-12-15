@@ -12,12 +12,8 @@ set(SOURCE_FILES
         src/Nanoleaf.h
         src/NanoleafCentral.cpp
         src/NanoleafCentral.h
-        src/NanoleafPacket.cpp
-        src/NanoleafPacket.h
         src/NanoleafPeer.cpp
         src/NanoleafPeer.h
-        src/PacketManager.cpp
-        src/PacketManager.h
         config.h)
 
 add_custom_target(homegear COMMAND ../../makeAll.sh SOURCES ${SOURCE_FILES})

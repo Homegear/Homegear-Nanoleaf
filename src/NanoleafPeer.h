@@ -30,12 +30,7 @@
 #ifndef NANOLEAFPEER_H_
 #define NANOLEAFPEER_H_
 
-#include "NanoleafPacket.h"
-
 #include <homegear-base/BaseLib.h>
-
-
-#include <list>
 
 using namespace BaseLib;
 using namespace BaseLib::DeviceDescription;

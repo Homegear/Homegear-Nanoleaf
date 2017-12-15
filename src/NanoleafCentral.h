@@ -32,8 +32,6 @@
 
 #include <homegear-base/BaseLib.h>
 #include "NanoleafPeer.h"
-#include "NanoleafPacket.h"
-#include "PacketManager.h"
 
 #include <memory>
 #include <mutex>
@@ -78,6 +76,7 @@ protected:
 
 	std::atomic_bool _stopWorkerThread;
 	std::thread _workerThread;
+    int32_t _pollingInterval = 5000;
 
 	std::mutex _searchNanoleafsMutex;
     std::atomic_bool _searching;
