@@ -389,14 +389,20 @@ void NanoleafPeer::getValuesFromPacket(BaseLib::PVariable json, std::vector<Fram
             for(JsonPayloads::iterator j = frame->jsonPayloads.begin(); j != frame->jsonPayloads.end(); ++j)
             {
                 BaseLib::PVariable currentJson = json;
-                if(currentJson->structValue->find((*j)->key) == currentJson->structValue->end()) continue;
-                currentJson = currentJson->structValue->operator []((*j)->key);
+                auto keyIterator = currentJson->structValue->find((*j)->key);
+                if(keyIterator == currentJson->structValue->end()) continue;
+                currentJson = keyIterator->second;
                 if(!(*j)->subkey.empty())
                 {
-                    if(currentJson->structValue->find((*j)->subkey) == currentJson->structValue->end()) continue;
-                    currentJson = currentJson->structValue->operator[]((*j)->subkey);
-                    auto valueIterator = currentJson->structValue->find("value");
-                    if(valueIterator != currentJson->structValue->end()) currentJson = valueIterator->second;
+                    auto subkeyIterator = currentJson->structValue->find((*j)->subkey);
+                    if(subkeyIterator == currentJson->structValue->end()) continue;
+                    currentJson = subkeyIterator->second;
+                    if(!(*j)->subsubkey.empty())
+                    {
+                        auto subsubkeyIterator = currentJson->structValue->find((*j)->subsubkey);
+                        if(subsubkeyIterator == currentJson->structValue->end()) continue;
+                        currentJson = subsubkeyIterator->second;
+                    }
                 }
 
                 for(std::vector<PParameter>::iterator k = frame->associatedVariables.begin(); k != frame->associatedVariables.end(); ++k)
