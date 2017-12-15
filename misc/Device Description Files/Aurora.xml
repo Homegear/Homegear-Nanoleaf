@@ -72,6 +72,10 @@
 					<subkey>effectsList</subkey>
 					<parameterId>EFFECTS_LIST</parameterId>
 				</element>
+				<element>
+					<key>panelLayout</key>
+					<parameterId>PANEL_LAYOUT</parameterId>
+				</element>
 			</jsonPayload>
 		</packet>
 		<packet id="STATE_SET">
@@ -406,6 +410,23 @@
 				<packets>
 					<packet id="EFFECTS_RAW_JSON_SET">
 						<type>set</type>
+					</packet>
+				</packets>
+			</parameter>
+			<parameter id="PANEL_LAYOUT">
+				<properties>
+					<writeable>false</writeable>
+					<casts>
+						<rpcBinary/>
+					</casts>
+				</properties>
+				<logicalStruct/>
+				<physicalNone groupId="PANEL_LAYOUT">
+					<operationType>command</operationType>
+				</physicalNone>
+				<packets>
+					<packet id="INFO">
+						<type>event</type>
 					</packet>
 				</packets>
 			</parameter>
