@@ -139,6 +139,15 @@
 				</element>
 			</jsonPayload>
 		</packet>
+		<packet id="EFFECTS_RAW_JSON_SET">
+			<direction>fromCentral</direction>
+			<function1>effects</function1>
+			<jsonPayload>
+				<element>
+					<parameterId>EFFECTS_RAW_JSON</parameterId>
+				</element>
+			</jsonPayload>
+		</packet>
 	</packets>
 	<parameterGroups>
 		<configParameters id="config--1"/>
@@ -380,6 +389,23 @@
 				<packets>
 					<packet id="INFO">
 						<type>event</type>
+					</packet>
+				</packets>
+			</parameter>
+			<parameter id="EFFECTS_RAW_JSON">
+				<properties>
+					<readable>false</readable>
+					<casts>
+						<rpcBinary/>
+					</casts>
+				</properties>
+				<logicalString/>
+				<physicalNone groupId="EFFECTS_RAW_JSON">
+					<operationType>command</operationType>
+				</physicalNone>
+				<packets>
+					<packet id="EFFECTS_RAW_JSON_SET">
+						<type>set</type>
 					</packet>
 				</packets>
 			</parameter>

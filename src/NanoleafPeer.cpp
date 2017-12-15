@@ -795,14 +795,20 @@ PVariable NanoleafPeer::setValue(BaseLib::PRpcClientInfo clientInfo, uint32_t ch
                 //We can't just search for param, because it is ambiguous (see for example LEVEL for HM-CC-TC).
                 if((*i)->parameterId == rpcParameter->physical->groupId)
                 {
-                    if((*i)->key.empty()) continue;
                     std::vector<uint8_t> parameterData = parameter.getBinaryData();
-                    if((*i)->subkey.empty()) json->structValue->operator[]((*i)->key) = _binaryDecoder->decodeResponse(parameterData); //Parameter already is in packet format. Just convert it from RPC to BaseLib::Variable.
+                    if((*i)->key.empty()) //JSON
+                    {
+                        json = _jsonDecoder->decode(_binaryDecoder->decodeResponse(parameterData)->stringValue);
+                    }
                     else
                     {
-                        auto keyIterator = json->structValue->find((*i)->key);
-                        if(keyIterator == json->structValue->end()) keyIterator = json->structValue->emplace((*i)->key, std::make_shared<Variable>(VariableType::tStruct)).first;
-                        keyIterator->second->structValue->emplace((*i)->subkey, _binaryDecoder->decodeResponse(parameterData));
+                        if((*i)->subkey.empty()) json->structValue->operator[]((*i)->key) = _binaryDecoder->decodeResponse(parameterData); //Parameter already is in packet format. Just convert it from RPC to BaseLib::Variable.
+                        else
+                        {
+                            auto keyIterator = json->structValue->find((*i)->key);
+                            if(keyIterator == json->structValue->end()) keyIterator = json->structValue->emplace((*i)->key, std::make_shared<Variable>(VariableType::tStruct)).first;
+                            keyIterator->second->structValue->emplace((*i)->subkey, _binaryDecoder->decodeResponse(parameterData));
+                        }
                     }
                 }
                     //Search for all other parameters
