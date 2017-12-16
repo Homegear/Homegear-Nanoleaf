@@ -521,12 +521,7 @@ void NanoleafPeer::packetReceived(PVariable json)
                             }
                             else if(parameter.rpcParameter->logical->type == ILogical::Type::Enum::tBoolean)
                             {
-                                if(parameter.rpcParameter->id == "REACHABLE")
-                                {
-                                    bool value = !((bool)i->second.value.at(i->second.value.size() - 1));
-                                    serviceMessages->setUnreach(value, false);
-                                }
-                                else serviceMessages->set(i->first, (bool)i->second.value.at(i->second.value.size() - 1));
+                                serviceMessages->set(i->first, (bool)i->second.value.at(i->second.value.size() - 1));
                             }
                         }
 
