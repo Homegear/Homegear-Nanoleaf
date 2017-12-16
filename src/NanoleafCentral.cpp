@@ -198,7 +198,8 @@ std::shared_ptr<NanoleafPeer> NanoleafCentral::getPeer(uint64_t id)
 	try
 	{
 		std::lock_guard<std::mutex> peersGuard(_peersMutex);
-		if(_peersById.find(id) != _peersById.end()) return std::dynamic_pointer_cast<NanoleafPeer>(_peersById.at(id));
+        auto peersIterator = _peersById.find(id);
+		if(peersIterator != _peersById.end()) return std::dynamic_pointer_cast<NanoleafPeer>(peersIterator->second);
 	}
 	catch(const std::exception& ex)
     {
@@ -220,7 +221,8 @@ std::shared_ptr<NanoleafPeer> NanoleafCentral::getPeer(std::string serialNumber)
 	try
 	{
 		std::lock_guard<std::mutex> peersGuard(_peersMutex);
-		if(_peersBySerial.find(serialNumber) != _peersBySerial.end()) return std::dynamic_pointer_cast<NanoleafPeer>(_peersBySerial.at(serialNumber));
+        auto peersIterator = _peersBySerial.find(serialNumber);
+		if(peersIterator != _peersBySerial.end()) return std::dynamic_pointer_cast<NanoleafPeer>(peersIterator->second);
 	}
 	catch(const std::exception& ex)
     {
@@ -266,6 +268,12 @@ void NanoleafCentral::deletePeer(uint64_t id)
 			if(_peersBySerial.find(peer->getSerialNumber()) != _peersBySerial.end()) _peersBySerial.erase(peer->getSerialNumber());
 			if(_peersById.find(id) != _peersById.end()) _peersById.erase(id);
 		}
+
+        while(peer.use_count() > 1)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+
 		peer->deleteFromDatabase();
 		GD::out.printMessage("Removed peer " + std::to_string(peer->getID()));
 	}
@@ -769,10 +777,11 @@ void NanoleafCentral::worker()
                     _peersMutex.unlock();
                     searchDevicesThread(true);
 				}
-				counter++;
-                _peersMutex.lock();
-                if(!_peersById.empty())
+
+                std::shared_ptr<NanoleafPeer> peer;
+
                 {
+                    std::lock_guard<std::mutex> peersGuard(_peersMutex);
                     if(!_peersById.empty())
                     {
                         std::map<uint64_t, std::shared_ptr<BaseLib::Systems::Peer>>::iterator nextPeer = _peersById.find(lastPeer);
@@ -783,10 +792,10 @@ void NanoleafCentral::worker()
                         }
                         else nextPeer = _peersById.begin();
                         lastPeer = nextPeer->first;
+                        peer = std::dynamic_pointer_cast<NanoleafPeer>(nextPeer->second);
                     }
                 }
-                _peersMutex.unlock();
-                std::shared_ptr<NanoleafPeer> peer(getPeer(lastPeer));
+
                 if(peer && !peer->deleting) peer->worker();
                 counter++;
 			}
