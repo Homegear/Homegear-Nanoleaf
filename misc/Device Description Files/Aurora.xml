@@ -177,31 +177,12 @@
 					<operationType>internal</operationType>
 				</physicalInteger>
 			</parameter>
-			<parameter id="CONFIG_PENDING">
-				<properties>
-					<writeable>false</writeable>
-					<service>true</service>
-				</properties>
-				<logicalBoolean/>
-				<physicalInteger groupId="CONFIG_PENDING">
-					<operationType>internal</operationType>
-				</physicalInteger>
-			</parameter>
 			<parameter id="RSSI_DEVICE">
 				<properties>
 					<writeable>false</writeable>
 				</properties>
 				<logicalInteger/>
 				<physicalInteger groupId="RSSI_DEVICE">
-					<operationType>internal</operationType>
-				</physicalInteger>
-			</parameter>
-			<parameter id="RSSI_PEER">
-				<properties>
-					<writeable>false</writeable>
-				</properties>
-				<logicalInteger/>
-				<physicalInteger groupId="RSSI_PEER">
 					<operationType>internal</operationType>
 				</physicalInteger>
 			</parameter>
@@ -422,24 +403,6 @@
 				</properties>
 				<logicalStruct/>
 				<physicalNone groupId="PANEL_LAYOUT">
-					<operationType>command</operationType>
-				</physicalNone>
-				<packets>
-					<packet id="INFO">
-						<type>event</type>
-					</packet>
-				</packets>
-			</parameter>
-			<parameter id="REACHABLE">
-				<properties>
-					<writeable>false</writeable>
-					<service>true</service>
-					<casts>
-						<rpcBinary/>
-					</casts>
-				</properties>
-				<logicalBoolean/>
-				<physicalNone groupId="REACHABLE">
 					<operationType>command</operationType>
 				</physicalNone>
 				<packets>

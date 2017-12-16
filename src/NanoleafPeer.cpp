@@ -147,11 +147,12 @@ void NanoleafPeer::worker()
             }
         }
     }
-    catch(const std::exception& ex)
+    catch(BaseLib::Exception& ex)
     {
+        serviceMessages->setUnreach(true, false);
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
-    catch(BaseLib::Exception& ex)
+    catch(const std::exception& ex)
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
@@ -477,6 +478,7 @@ void NanoleafPeer::packetReceived(PVariable json)
 	try
 	{
         setLastPacketReceived();
+        serviceMessages->setUnreach(false, false);
         std::vector<FrameValues> frameValues;
         getValuesFromPacket(json, frameValues);
         std::map<uint32_t, std::shared_ptr<std::vector<std::string>>> valueKeys;
