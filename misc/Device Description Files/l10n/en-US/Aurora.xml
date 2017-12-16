@@ -61,7 +61,7 @@
 			</parameter>
 			<parameter id="EFFECTS_RAW_JSON">
 				<label>Effect JSON</label>
-				<description>You can place raw JSON effect commands here. E. g.: <code>{"write":{"command": "add", "animName": "bla", "animType": "static", "animData": "5 15 1 255 0 0 0 1 169 1 0 255 0 0 1 121 1 0 0 255 0 1 186 1 255 0 255 0 1 221 1 255 255 0 0 1", "loop" : false}}</code>. See http://forum.nanoleaf.me/docs/openapi for more information.</description>
+				<description>You can place raw JSON effect commands here. E. g.: {"write":{"command": "add", "animName": "bla", "animType": "static", "animData": "5 15 1 255 0 0 0 1 169 1 0 255 0 0 1 121 1 0 0 255 0 1 186 1 255 0 255 0 1 221 1 255 255 0 0 1", "loop" : false}}. See http://forum.nanoleaf.me/docs/openapi for more information.</description>
 			</parameter>
 			<parameter id="PANEL_LAYOUT">
 				<label>Panel layout</label>
