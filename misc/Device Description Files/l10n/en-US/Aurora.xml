@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<homegearDeviceTranslation version="1">
+	<supportedDevices>
+		<device id="Aurora">
+			<description>Aurora</description>
+		</device>
+	</supportedDevices>
+	<parameterGroups>
+		<configParameters id="config--1"/>
+		<configParameters id="maint_ch_master--0"/>
+		<variables id="maint_ch_values--0">
+			<parameter id="UNREACH">
+				<label>Unreachable</label>
+				<description>Set to "true" when the device is unreachable.</description>
+			</parameter>
+			<parameter id="STICKY_UNREACH">
+				<label>Sticky unreachable</label>
+				<description>Set to "true" when the device is unreachable. It stays "true" until reset manually.</description>
+			</parameter>
+			<parameter id="RSSI_DEVICE">
+				<label>RSSI</label>
+				<description>The RSSI of the device in dBm. It is not set for Philips hue lamps.</description>
+			</parameter>
+		</variables>
+		<variables id="switch_valueset--1">
+			<parameter id="PEER_ID">
+				<label>Peer ID</label>
+				<description>The ID of the peer. This variable is only needed for compatability reasons.</description>
+			</parameter>
+			<parameter id="STATE">
+				<label>State</label>
+				<description>Switches the light on using the last settings or off.</description>
+			</parameter>
+			<parameter id="BRIGHTNESS">
+				<label>Brightness</label>
+				<description>Sets the brightness and switches "COLOR_MODE" to HSV.</description>
+			</parameter>
+			<parameter id="HUE">
+				<label>Hue</label>
+				<description>Sets the hue and switches "COLOR_MODE" to HSV.</description>
+			</parameter>
+			<parameter id="SATURATION">
+				<label>Saturation</label>
+				<description>The saturation of the current color. Switches "COLOR_MODE" to HSV ("hs").</description>
+			</parameter>
+			<parameter id="COLOR_TEMPERATURE">
+				<label>Color temperature</label>
+				<description>Switches "COLOR_MODE" to white ("ct"). Sets the temperature of the white light.</description>
+			</parameter>
+			<parameter id="COLOR_MODE">
+				<label>Color mode</label>
+				<description>The currently selected color mode. "ct" => white, "hs" => HSV, "effects" => animation.</description>
+			</parameter>
+			<parameter id="EFFECT">
+				<label>Effect</label>
+				<description>Shows the currently selected effect or sets it.</description>
+			</parameter>
+			<parameter id="EFFECTS_LIST">
+				<label>Effect list</label>
+				<description>Array with all installed effect names. These names can be used to set "EFFECT".</description>
+			</parameter>
+			<parameter id="EFFECTS_RAW_JSON">
+				<label>Effect JSON</label>
+				<description>You can place raw JSON effect commands here. E. g.: {"write":{"command": "add", "animName": "bla", "animType": "static", "animData": "5 15 1 255 0 0 0 1 169 1 0 255 0 0 1 121 1 0 0 255 0 1 186 1 255 0 255 0 1 221 1 255 255 0 0 1", "loop" : false}}. See http://forum.nanoleaf.me/docs/openapi for more information.</description>
+			</parameter>
+			<parameter id="PANEL_LAYOUT">
+				<label>Panel layout</label>
+				<description>Returns a structure with the current panel layout.</description>
+			</parameter>
+		</variables>
+	</parameterGroups>
+</homegearDeviceTranslation>

@@ -8,7 +8,7 @@ case "$1" in
 		;;
 
 	purge)
-		rm -Rf /etc/homegear/devices/5 > /dev/null 2>&1
+		rm -Rf /etc/homegear/devices/22 > /dev/null 2>&1
 		rm -f /var/lib/homegear/modules/mod_nanoleaf.so > /dev/null 2>&1
         ;;
 

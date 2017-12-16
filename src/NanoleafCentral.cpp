@@ -50,6 +50,10 @@ void NanoleafCentral::init()
 
     _ssdp.reset(new BaseLib::Ssdp(GD::bl));
 
+    std::string settingName = "pollinginterval";
+    auto setting = GD::family->getFamilySetting(settingName);
+    if(setting) _pollingInterval = setting->integerValue;
+    if(_pollingInterval < 1000) _pollingInterval = 1000;
 	GD::bl->threadManager.start(_workerThread, true, _bl->settings.workerThreadPriority(), _bl->settings.workerThreadPolicy(), &NanoleafCentral::worker, this);
 }
 
@@ -737,7 +741,7 @@ void NanoleafCentral::worker()
 			std::this_thread::sleep_for(std::chrono::seconds(1));
 		}
 
-		std::chrono::milliseconds sleepingTime(5000);
+		std::chrono::milliseconds sleepingTime(_pollingInterval);
 		uint32_t counter = 0;
 		uint32_t countsPer10Minutes = BaseLib::HelperFunctions::getRandomNumber(5, 120);
         uint64_t lastPeer;
@@ -756,7 +760,7 @@ void NanoleafCentral::worker()
                     _peersMutex.lock();
                     if(_peersById.size() > 0)
                     {
-                        int32_t windowTimePerPeer = 5000 / _peersById.size(); //Poll every 5 seconds
+                        int32_t windowTimePerPeer = _pollingInterval / _peersById.size();
                         if(windowTimePerPeer > 2) windowTimePerPeer -= 2;
                         sleepingTime = std::chrono::milliseconds(windowTimePerPeer);
                         countsPer10Minutes = 600000 / windowTimePerPeer;

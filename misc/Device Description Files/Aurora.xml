@@ -30,22 +30,125 @@
 				<element>
 					<key>state</key>
 					<subkey>on</subkey>
+					<subsubkey>value</subsubkey>
 					<parameterId>STATE</parameterId>
 				</element>
 				<element>
 					<key>state</key>
-					<subkey>reachable</subkey>
-					<parameterId>REACHABLE</parameterId>
+					<subkey>brightness</subkey>
+					<subsubkey>value</subsubkey>
+					<parameterId>BRIGHTNESS</parameterId>
+				</element>
+				<element>
+					<key>state</key>
+					<subkey>hue</subkey>
+					<subsubkey>value</subsubkey>
+					<parameterId>HUE</parameterId>
+				</element>
+				<element>
+					<key>state</key>
+					<subkey>sat</subkey>
+					<subsubkey>value</subsubkey>
+					<parameterId>SATURATION</parameterId>
+				</element>
+				<element>
+					<key>state</key>
+					<subkey>ct</subkey>
+					<subsubkey>value</subsubkey>
+					<parameterId>COLOR_TEMPERATURE</parameterId>
+				</element>
+				<element>
+					<key>state</key>
+					<subkey>colorMode</subkey>
+					<parameterId>COLOR_MODE</parameterId>
+				</element>
+				<element>
+					<key>effects</key>
+					<subkey>select</subkey>
+					<parameterId>EFFECT</parameterId>
+				</element>
+				<element>
+					<key>effects</key>
+					<subkey>effectsList</subkey>
+					<parameterId>EFFECTS_LIST</parameterId>
+				</element>
+				<element>
+					<key>panelLayout</key>
+					<parameterId>PANEL_LAYOUT</parameterId>
 				</element>
 			</jsonPayload>
 		</packet>
 		<packet id="STATE_SET">
 			<direction>fromCentral</direction>
-			<type>0x2</type>
+			<function1>state</function1>
 			<jsonPayload>
 				<element>
 					<key>on</key>
+					<subkey>value</subkey>
 					<parameterId>STATE</parameterId>
+				</element>
+			</jsonPayload>
+		</packet>
+		<packet id="BRIGHTNESS_SET">
+			<direction>fromCentral</direction>
+			<function1>state</function1>
+			<jsonPayload>
+				<element>
+					<key>brightness</key>
+					<subkey>value</subkey>
+					<parameterId>BRIGHTNESS</parameterId>
+				</element>
+			</jsonPayload>
+		</packet>
+		<packet id="HUE_SET">
+			<direction>fromCentral</direction>
+			<function1>state</function1>
+			<jsonPayload>
+				<element>
+					<key>hue</key>
+					<subkey>value</subkey>
+					<parameterId>HUE</parameterId>
+				</element>
+			</jsonPayload>
+		</packet>
+		<packet id="SATURATION_SET">
+			<direction>fromCentral</direction>
+			<function1>state</function1>
+			<jsonPayload>
+				<element>
+					<key>sat</key>
+					<subkey>value</subkey>
+					<parameterId>SATURATION</parameterId>
+				</element>
+			</jsonPayload>
+		</packet>
+		<packet id="COLOR_TEMPERATURE_SET">
+			<direction>fromCentral</direction>
+			<function1>state</function1>
+			<jsonPayload>
+				<element>
+					<key>ct</key>
+					<subkey>value</subkey>
+					<parameterId>COLOR_TEMPERATURE</parameterId>
+				</element>
+			</jsonPayload>
+		</packet>
+		<packet id="EFFECT_SET">
+			<direction>fromCentral</direction>
+			<function1>effects</function1>
+			<jsonPayload>
+				<element>
+					<key>select</key>
+					<parameterId>EFFECT</parameterId>
+				</element>
+			</jsonPayload>
+		</packet>
+		<packet id="EFFECTS_RAW_JSON_SET">
+			<direction>fromCentral</direction>
+			<function1>effects</function1>
+			<jsonPayload>
+				<element>
+					<parameterId>EFFECTS_RAW_JSON</parameterId>
 				</element>
 			</jsonPayload>
 		</packet>
@@ -74,16 +177,6 @@
 					<operationType>internal</operationType>
 				</physicalInteger>
 			</parameter>
-			<parameter id="CONFIG_PENDING">
-				<properties>
-					<writeable>false</writeable>
-					<service>true</service>
-				</properties>
-				<logicalBoolean/>
-				<physicalInteger groupId="CONFIG_PENDING">
-					<operationType>internal</operationType>
-				</physicalInteger>
-			</parameter>
 			<parameter id="RSSI_DEVICE">
 				<properties>
 					<writeable>false</writeable>
@@ -93,21 +186,12 @@
 					<operationType>internal</operationType>
 				</physicalInteger>
 			</parameter>
-			<parameter id="RSSI_PEER">
-				<properties>
-					<writeable>false</writeable>
-				</properties>
-				<logicalInteger/>
-				<physicalInteger groupId="RSSI_PEER">
-					<operationType>internal</operationType>
-				</physicalInteger>
-			</parameter>
 		</variables>
 		<variables id="switch_valueset--1">
 			<parameter id="PEER_ID">
 				<properties>
 					<!-- Needed for the CCU2. Must be writeable, otherwise it can't be used in the CCU. -->
-					<control>EASYPHILIPSHUE.PEERID</control>
+					<control>NANOLEAF.PEERID</control>
 					<casts>
 						<rpcBinary/>
 					</casts>
@@ -121,9 +205,9 @@
 					</casts>
 				</properties>
 				<logicalBoolean/>
-				<physicalInteger groupId="STATE">
+				<physicalNone groupId="STATE">
 					<operationType>command</operationType>
-				</physicalInteger>
+				</physicalNone>
 				<packets>
 					<packet id="STATE_SET">
 						<type>set</type>
@@ -133,18 +217,194 @@
 					</packet>
 				</packets>
 			</parameter>
-			<parameter id="REACHABLE">
+			<parameter id="BRIGHTNESS">
 				<properties>
-					<writeable>false</writeable>
-					<service>true</service>
 					<casts>
 						<rpcBinary/>
 					</casts>
 				</properties>
-				<logicalBoolean/>
-				<physicalInteger groupId="REACHABLE">
+				<logicalInteger>
+					<defaultValue>0</defaultValue>
+					<minimumValue>0</minimumValue>
+					<maximumValue>100</maximumValue>
+				</logicalInteger>
+				<physicalNone groupId="BRIGHTNESS">
 					<operationType>command</operationType>
-				</physicalInteger>
+				</physicalNone>
+				<packets>
+					<packet id="BRIGHTNESS_SET">
+						<type>set</type>
+					</packet>
+					<packet id="INFO">
+						<type>event</type>
+					</packet>
+				</packets>
+			</parameter>
+			<parameter id="HUE">
+				<properties>
+					<casts>
+						<rpcBinary/>
+					</casts>
+				</properties>
+				<logicalInteger>
+					<defaultValue>0</defaultValue>
+					<minimumValue>0</minimumValue>
+					<maximumValue>360</maximumValue>
+				</logicalInteger>
+				<physicalNone groupId="HUE">
+					<operationType>command</operationType>
+				</physicalNone>
+				<packets>
+					<packet id="HUE_SET">
+						<type>set</type>
+					</packet>
+					<packet id="INFO">
+						<type>event</type>
+					</packet>
+				</packets>
+			</parameter>
+			<parameter id="SATURATION">
+				<properties>
+					<casts>
+						<rpcBinary/>
+					</casts>
+				</properties>
+				<logicalInteger>
+					<defaultValue>0</defaultValue>
+					<minimumValue>0</minimumValue>
+					<maximumValue>100</maximumValue>
+				</logicalInteger>
+				<physicalNone groupId="SATURATION">
+					<operationType>command</operationType>
+				</physicalNone>
+				<packets>
+					<packet id="SATURATION_SET">
+						<type>set</type>
+					</packet>
+					<packet id="INFO">
+						<type>event</type>
+					</packet>
+				</packets>
+			</parameter>
+			<parameter id="COLOR_TEMPERATURE">
+				<properties>
+					<casts>
+						<rpcBinary/>
+					</casts>
+				</properties>
+				<logicalInteger>
+					<defaultValue>1200</defaultValue>
+					<minimumValue>1200</minimumValue>
+					<maximumValue>6500</maximumValue>
+				</logicalInteger>
+				<physicalNone groupId="COLOR_TEMPERATURE">
+					<operationType>command</operationType>
+				</physicalNone>
+				<packets>
+					<packet id="COLOR_TEMPERATURE_SET">
+						<type>set</type>
+					</packet>
+					<packet id="INFO">
+						<type>event</type>
+					</packet>
+				</packets>
+			</parameter>
+			<parameter id="COLOR_MODE">
+				<properties>
+					<writeable>false</writeable>
+					<casts>
+						<optionString/>
+						<rpcBinary/>
+					</casts>
+				</properties>
+				<logicalEnumeration>
+					<defaultValue>0</defaultValue>
+					<value>
+						<id>ct</id>
+						<index>0</index>
+					</value>
+					<value>
+						<id>hs</id>
+						<index>1</index>
+					</value>
+					<value>
+						<id>effects</id>
+						<index>2</index>
+					</value>
+				</logicalEnumeration>
+				<physicalString groupId="COLOR_MODE">
+					<operationType>command</operationType>
+				</physicalString>
+				<packets>
+					<packet id="INFO">
+						<type>event</type>
+					</packet>
+				</packets>
+			</parameter>
+			<parameter id="EFFECT">
+				<properties>
+					<casts>
+						<rpcBinary/>
+					</casts>
+				</properties>
+				<logicalString/>
+				<physicalNone groupId="EFFECT">
+					<operationType>command</operationType>
+				</physicalNone>
+				<packets>
+					<packet id="EFFECT_SET">
+						<type>set</type>
+					</packet>
+					<packet id="INFO">
+						<type>event</type>
+					</packet>
+				</packets>
+			</parameter>
+			<parameter id="EFFECTS_LIST">
+				<properties>
+					<writeable>false</writeable>
+					<casts>
+						<rpcBinary/>
+					</casts>
+				</properties>
+				<logicalArray/>
+				<physicalNone groupId="EFFECTS_LIST">
+					<operationType>command</operationType>
+				</physicalNone>
+				<packets>
+					<packet id="INFO">
+						<type>event</type>
+					</packet>
+				</packets>
+			</parameter>
+			<parameter id="EFFECTS_RAW_JSON">
+				<properties>
+					<readable>false</readable>
+					<casts>
+						<rpcBinary/>
+					</casts>
+				</properties>
+				<logicalString/>
+				<physicalNone groupId="EFFECTS_RAW_JSON">
+					<operationType>command</operationType>
+				</physicalNone>
+				<packets>
+					<packet id="EFFECTS_RAW_JSON_SET">
+						<type>set</type>
+					</packet>
+				</packets>
+			</parameter>
+			<parameter id="PANEL_LAYOUT">
+				<properties>
+					<writeable>false</writeable>
+					<casts>
+						<rpcBinary/>
+					</casts>
+				</properties>
+				<logicalStruct/>
+				<physicalNone groupId="PANEL_LAYOUT">
+					<operationType>command</operationType>
+				</physicalNone>
 				<packets>
 					<packet id="INFO">
 						<type>event</type>

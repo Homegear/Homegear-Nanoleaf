@@ -30,12 +30,7 @@
 #ifndef NANOLEAFPEER_H_
 #define NANOLEAFPEER_H_
 
-#include "NanoleafPacket.h"
-
 #include <homegear-base/BaseLib.h>
-
-
-#include <list>
 
 using namespace BaseLib;
 using namespace BaseLib::DeviceDescription;
@@ -117,11 +112,14 @@ protected:
 
 	std::shared_ptr<BaseLib::HttpClient> _httpClient;
 
+	std::shared_ptr<BaseLib::Rpc::RpcEncoder> _binaryEncoder;
+	std::shared_ptr<BaseLib::Rpc::RpcDecoder> _binaryDecoder;
+
 	std::shared_ptr<BaseLib::Rpc::JsonEncoder> _jsonEncoder;
 	std::shared_ptr<BaseLib::Rpc::JsonDecoder> _jsonDecoder;
 
 	virtual std::shared_ptr<BaseLib::Systems::ICentral> getCentral();
-	void getValuesFromPacket(std::shared_ptr<NanoleafPacket> packet, std::vector<FrameValues>& frameValue);
+	void getValuesFromPacket(BaseLib::PVariable json, std::vector<FrameValues>& frameValue);
 
 	virtual PParameterGroup getParameterSet(int32_t channel, ParameterGroup::Type::Enum type);
 
