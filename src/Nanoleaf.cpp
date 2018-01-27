@@ -87,7 +87,7 @@ void Nanoleaf::createCentral()
     }
 }
 
-PVariable Nanoleaf::getPairingMethods()
+PVariable Nanoleaf::getPairingInfo()
 {
 	try
 	{
