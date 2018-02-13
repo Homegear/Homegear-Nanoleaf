@@ -263,6 +263,7 @@ void NanoleafCentral::deletePeer(uint64_t id)
 		}
 
 		raiseRPCDeleteDevices(deviceAddresses, deviceInfo);
+        
 		{
 			std::lock_guard<std::mutex> peersGuard(_peersMutex);
 			if(_peersBySerial.find(peer->getSerialNumber()) != _peersBySerial.end()) _peersBySerial.erase(peer->getSerialNumber());
@@ -402,8 +403,6 @@ std::string NanoleafCentral::handleCliCommand(std::string command)
 					stringStream << "Filter types:" << std::endl;
 					stringStream << "  ID: Filter by id." << std::endl;
 					stringStream << "      FILTERVALUE: The id of the peer to filter (e. g. 513)." << std::endl;
-					stringStream << "  ADDRESS: Filter by address." << std::endl;
-					stringStream << "      FILTERVALUE: The 3 byte address of the peer to filter (e. g. 1DA44D)." << std::endl;
 					stringStream << "  SERIAL: Filter by serial number." << std::endl;
 					stringStream << "      FILTERVALUE: The serial number of the peer to filter (e. g. JEQ0554309)." << std::endl;
 					stringStream << "  NAME: Filter by name." << std::endl;
