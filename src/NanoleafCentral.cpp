@@ -29,6 +29,7 @@
 
 #include "NanoleafCentral.h"
 #include "GD.h"
+#include <homegear-base/Security/Acls.h>
 
 namespace Nanoleaf {
 
@@ -263,7 +264,7 @@ void NanoleafCentral::deletePeer(uint64_t id)
 		}
 
 		raiseRPCDeleteDevices(deviceAddresses, deviceInfo);
-        
+
 		{
 			std::lock_guard<std::mutex> peersGuard(_peersMutex);
 			if(_peersBySerial.find(peer->getSerialNumber()) != _peersBySerial.end()) _peersBySerial.erase(peer->getSerialNumber());
@@ -879,7 +880,7 @@ PVariable NanoleafCentral::deleteDevice(BaseLib::PRpcClientInfo clientInfo, uint
     return Variable::createError(-32500, "Unknown application error.");
 }
 
-PVariable NanoleafCentral::getDeviceInfo(BaseLib::PRpcClientInfo clientInfo, uint64_t id, std::map<std::string, bool> fields)
+PVariable NanoleafCentral::getDeviceInfo(BaseLib::PRpcClientInfo clientInfo, uint64_t id, std::map<std::string, bool> fields, bool checkAcls)
 {
 	try
 	{
@@ -896,17 +897,16 @@ PVariable NanoleafCentral::getDeviceInfo(BaseLib::PRpcClientInfo clientInfo, uin
 
 			std::vector<std::shared_ptr<NanoleafPeer>> peers;
 			//Copy all peers first, because listDevices takes very long and we don't want to lock _peersMutex too long
-			_peersMutex.lock();
+			std::lock_guard<std::mutex> peersGuard(_peersMutex);
 			for(std::map<uint64_t, std::shared_ptr<BaseLib::Systems::Peer>>::iterator i = _peersById.begin(); i != _peersById.end(); ++i)
 			{
 				peers.push_back(std::dynamic_pointer_cast<NanoleafPeer>(i->second));
 			}
-			_peersMutex.unlock();
 
 			for(std::vector<std::shared_ptr<NanoleafPeer>>::iterator i = peers.begin(); i != peers.end(); ++i)
 			{
-				//listDevices really needs a lot of resources, so wait a little bit after each device
-				std::this_thread::sleep_for(std::chrono::milliseconds(3));
+                if(checkAcls && !clientInfo->acls->checkDeviceReadAccess(*i)) continue;
+
 				PVariable info = (*i)->getDeviceInfo(clientInfo, fields);
 				if(!info) continue;
 				array->arrayValue->push_back(info);
@@ -918,17 +918,14 @@ PVariable NanoleafCentral::getDeviceInfo(BaseLib::PRpcClientInfo clientInfo, uin
 	catch(const std::exception& ex)
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-        _peersMutex.unlock();
     }
     catch(BaseLib::Exception& ex)
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-        _peersMutex.unlock();
     }
     catch(...)
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
-        _peersMutex.unlock();
     }
     return Variable::createError(-32500, "Unknown application error.");
 }
