@@ -29,7 +29,6 @@
 
 #include "NanoleafCentral.h"
 #include "GD.h"
-#include <homegear-base/Security/Acls.h>
 
 namespace Nanoleaf {
 
