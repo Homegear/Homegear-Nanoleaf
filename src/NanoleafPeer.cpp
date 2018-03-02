@@ -579,7 +579,7 @@ std::string NanoleafPeer::getFirmwareVersionString(int32_t firmwareVersion)
 }
 
 //RPC Methods
-PVariable NanoleafPeer::getParamsetDescription(BaseLib::PRpcClientInfo clientInfo, int32_t channel, ParameterGroup::Type::Enum type, uint64_t remoteID, int32_t remoteChannel)
+PVariable NanoleafPeer::getParamsetDescription(BaseLib::PRpcClientInfo clientInfo, int32_t channel, ParameterGroup::Type::Enum type, uint64_t remoteID, int32_t remoteChannel, bool checkAcls)
 {
 	try
 	{
@@ -590,7 +590,7 @@ PVariable NanoleafPeer::getParamsetDescription(BaseLib::PRpcClientInfo clientInf
 		PParameterGroup parameterGroup = functionIterator->second->getParameterGroup(type);
 		if(!parameterGroup) return Variable::createError(-3, "Unknown parameter set");
 
-		return Peer::getParamsetDescription(clientInfo, parameterGroup);
+		return Peer::getParamsetDescription(clientInfo, channel, parameterGroup, checkAcls);
 	}
 	catch(const std::exception& ex)
     {
@@ -607,7 +607,7 @@ PVariable NanoleafPeer::getParamsetDescription(BaseLib::PRpcClientInfo clientInf
     return Variable::createError(-32500, "Unknown application error.");
 }
 
-PVariable NanoleafPeer::putParamset(BaseLib::PRpcClientInfo clientInfo, int32_t channel, ParameterGroup::Type::Enum type, uint64_t remoteID, int32_t remoteChannel, PVariable variables, bool onlyPushing)
+PVariable NanoleafPeer::putParamset(BaseLib::PRpcClientInfo clientInfo, int32_t channel, ParameterGroup::Type::Enum type, uint64_t remoteID, int32_t remoteChannel, PVariable variables, bool onlyPushing, bool checkAcls)
 {
 	try
 	{
@@ -619,11 +619,17 @@ PVariable NanoleafPeer::putParamset(BaseLib::PRpcClientInfo clientInfo, int32_t 
 		if(!parameterGroup) return Variable::createError(-3, "Unknown parameter set");
 		if(variables->structValue->empty()) return PVariable(new Variable(VariableType::tVoid));
 
+        auto central = getCentral();
+        if(!central) return Variable::createError(-32500, "Could not get central.");
+
 		if(type == ParameterGroup::Type::Enum::variables)
 		{
 			for(Struct::iterator i = variables->structValue->begin(); i != variables->structValue->end(); ++i)
 			{
 				if(i->first.empty() || !i->second) continue;
+
+                if(checkAcls && !clientInfo->acls->checkVariableWriteAccess(central->getPeer(_peerID), channel, i->first)) continue;
+
 				setValue(clientInfo, channel, i->first, i->second, true);
 			}
 		}
@@ -648,7 +654,7 @@ PVariable NanoleafPeer::putParamset(BaseLib::PRpcClientInfo clientInfo, int32_t 
     return Variable::createError(-32500, "Unknown application error.");
 }
 
-PVariable NanoleafPeer::getParamset(BaseLib::PRpcClientInfo clientInfo, int32_t channel, ParameterGroup::Type::Enum type, uint64_t remoteID, int32_t remoteChannel)
+PVariable NanoleafPeer::getParamset(BaseLib::PRpcClientInfo clientInfo, int32_t channel, ParameterGroup::Type::Enum type, uint64_t remoteID, int32_t remoteChannel, bool checkAcls)
 {
 	try
 	{
@@ -661,6 +667,9 @@ PVariable NanoleafPeer::getParamset(BaseLib::PRpcClientInfo clientInfo, int32_t 
 		if(!parameterGroup) return Variable::createError(-3, "Unknown parameter set");
 		PVariable variables(new Variable(VariableType::tStruct));
 
+        auto central = getCentral();
+        if(!central) return Variable::createError(-32500, "Could not get central.");
+
 		for(Parameters::iterator i = parameterGroup->parameters.begin(); i != parameterGroup->parameters.end(); ++i)
 		{
 			if(i->second->id.empty()) continue;
@@ -672,6 +681,8 @@ PVariable NanoleafPeer::getParamset(BaseLib::PRpcClientInfo clientInfo, int32_t 
 			PVariable element;
 			if(type == ParameterGroup::Type::Enum::variables)
 			{
+                if(checkAcls && !clientInfo->acls->checkVariableReadAccess(central->getPeer(_peerID), channel, i->first)) continue;
+
 				if(!i->second->readable) continue;
 				if(valuesCentral.find(channel) == valuesCentral.end()) continue;
 				if(valuesCentral[channel].find(i->second->id) == valuesCentral[channel].end()) continue;

@@ -879,64 +879,6 @@ PVariable NanoleafCentral::deleteDevice(BaseLib::PRpcClientInfo clientInfo, uint
     return Variable::createError(-32500, "Unknown application error.");
 }
 
-PVariable NanoleafCentral::putParamset(BaseLib::PRpcClientInfo clientInfo, std::string serialNumber, int32_t channel, ParameterGroup::Type::Enum type, std::string remoteSerialNumber, int32_t remoteChannel, PVariable paramset)
-{
-	try
-	{
-		std::shared_ptr<NanoleafPeer> peer(getPeer(serialNumber));
-		if(!peer) return Variable::createError(-2, "Unknown device.");
-		uint64_t remoteID = 0;
-		if(!remoteSerialNumber.empty())
-		{
-			std::shared_ptr<NanoleafPeer> remotePeer(getPeer(remoteSerialNumber));
-			if(!remotePeer)
-			{
-				if(remoteSerialNumber != _serialNumber) return Variable::createError(-3, "Remote peer is unknown.");
-			}
-			else remoteID = remotePeer->getID();
-		}
-		PVariable result = peer->putParamset(clientInfo, channel, type, remoteID, remoteChannel, paramset);
-		return result;
-	}
-	catch(const std::exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
-    }
-    return Variable::createError(-32500, "Unknown application error.");
-}
-
-PVariable NanoleafCentral::putParamset(BaseLib::PRpcClientInfo clientInfo, uint64_t peerID, int32_t channel, ParameterGroup::Type::Enum type, uint64_t remoteID, int32_t remoteChannel, PVariable paramset)
-{
-	try
-	{
-		std::shared_ptr<NanoleafPeer> peer(getPeer(peerID));
-		if(!peer) return Variable::createError(-2, "Unknown device.");
-		PVariable result = peer->putParamset(clientInfo, channel, type, remoteID, remoteChannel, paramset);
-		return result;
-	}
-	catch(const std::exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
-    }
-    return Variable::createError(-32500, "Unknown application error.");
-}
-
 void NanoleafCentral::searchDevicesThread(bool updateOnly)
 {
     std::lock_guard<std::mutex> searchDevicesGuard(_searchNanoleafsMutex);
