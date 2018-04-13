@@ -91,10 +91,37 @@ PVariable Nanoleaf::getPairingInfo()
 {
 	try
 	{
-		if(!_central) return PVariable(new Variable(BaseLib::VariableType::tArray));
-		PVariable array(new Variable(BaseLib::VariableType::tArray));
-		array->arrayValue->push_back(PVariable(new Variable(std::string("searchDevices"))));
-		return array;
+        if(!_central) return std::make_shared<BaseLib::Variable>(BaseLib::VariableType::tStruct);
+        PVariable info = std::make_shared<BaseLib::Variable>(BaseLib::VariableType::tStruct);
+
+        //{{{ General
+        info->structValue->emplace("searchInterfaces", std::make_shared<BaseLib::Variable>(false));
+        //}}}
+
+        //{{{ Family settings
+        PVariable familySettings = std::make_shared<BaseLib::Variable>(BaseLib::VariableType::tStruct);
+
+        PVariable field = std::make_shared<BaseLib::Variable>(BaseLib::VariableType::tStruct);
+        field->structValue->emplace("pos", std::make_shared<BaseLib::Variable>(0));
+        field->structValue->emplace("label", std::make_shared<BaseLib::Variable>(std::string("l10n.common.pollinginterval")));
+        field->structValue->emplace("type", std::make_shared<BaseLib::Variable>(std::string("integer")));
+        field->structValue->emplace("default", std::make_shared<BaseLib::Variable>(5000));
+        familySettings->structValue->emplace("pollingIntervall", field);
+
+        info->structValue->emplace("familySettings", familySettings);
+        //}}}
+
+        //{{{ Pairing methods
+        PVariable pairingMethods = std::make_shared<BaseLib::Variable>(BaseLib::VariableType::tStruct);
+        pairingMethods->structValue->emplace("searchDevices", std::make_shared<BaseLib::Variable>(BaseLib::VariableType::tStruct));
+        info->structValue->emplace("pairingMethods", pairingMethods);
+        //}}}
+
+        //{{{ interfaces
+        info->structValue->emplace("interfaces", std::make_shared<BaseLib::Variable>(BaseLib::VariableType::tStruct));
+        //}}}
+
+        return info;
 	}
 	catch(const std::exception& ex)
 	{
