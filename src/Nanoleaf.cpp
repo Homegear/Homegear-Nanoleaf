@@ -67,7 +67,7 @@ void Nanoleaf::createCentral()
 
 		int32_t seedNumber = BaseLib::HelperFunctions::getRandomNumber(1, 9999999);
 		std::ostringstream stringstream;
-		stringstream << "VHC" << std::setw(7) << std::setfill('0') << std::dec << seedNumber;
+		stringstream << "VNL" << std::setw(7) << std::setfill('0') << std::dec << seedNumber;
 		std::string serialNumber(stringstream.str());
 
 		_central.reset(new NanoleafCentral(0, serialNumber, 1, this));

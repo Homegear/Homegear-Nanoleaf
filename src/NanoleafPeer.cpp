@@ -133,7 +133,7 @@ void NanoleafPeer::worker()
             _httpClient->sendRequest(postRequest, http, false);
             if(http.getContentSize() == 0)
             {
-                _bl->out.printWarning("Warning: Peer " + std::to_string(_peerID) + " has no auth token set. Please press the power button on your Nanoleaf controller for three seconds.");
+                _bl->out.printWarning("Warning: Peer " + std::to_string(_peerID) + " has no auth token set. Please press the power button on your Nanoleaf controller for five seconds.");
             }
             else
             {

@@ -685,7 +685,7 @@ std::string NanoleafCentral::handleCliCommand(std::string command)
 			}
 
             searchDevicesThread(false);
-			stringStream << "Search completed. Please press the power button for three seconds on all newly added Nanoleafs." << std::endl;
+			stringStream << "Search completed. Please press the power button for five seconds on all newly added Nanoleafs." << std::endl;
 			return stringStream.str();
 		}
 		else return "Unknown command.\n";
@@ -889,7 +889,7 @@ void NanoleafCentral::searchDevicesThread(bool updateOnly)
         std::string stHeader("nanoleaf_aurora:light");
         std::vector<BaseLib::SsdpInfo> searchResult;
         std::vector<std::shared_ptr<NanoleafPeer>> newPeers;
-        _ssdp->searchDevicesPassive(stHeader, 60000, searchResult, _stopWorkerThread);
+        _ssdp->searchDevicesPassive(stHeader, 70000, searchResult, _stopWorkerThread);
         for(std::vector<BaseLib::SsdpInfo>::iterator i = searchResult.begin(); i != searchResult.end(); ++i)
         {
             if(i->getField("nl-devicename").compare(0, 15, "Nanoleaf Aurora") != 0) continue;
