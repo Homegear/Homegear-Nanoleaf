@@ -894,7 +894,7 @@ int32_t NanoleafCentral::searchDevices(bool updateOnly)
 
         for(std::vector<BaseLib::SsdpInfo>::iterator i = searchResult.begin(); i != searchResult.end(); ++i)
         {
-            if(i->getField("nl-devicename").compare(0, 15, "Nanoleaf Aurora") != 0) continue;
+            if(i->getField("nl-devicename").compare(0, 8, "Nanoleaf") != 0) continue;
             std::string mac = i->getField("nl-deviceid");
             BaseLib::HelperFunctions::stringReplace(mac, ":", "");
             if(mac.size() < 12) continue;
