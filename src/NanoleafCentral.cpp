@@ -718,6 +718,7 @@ std::shared_ptr<NanoleafPeer> NanoleafCentral::createPeer(uint32_t deviceType, s
 		peer->setRpcDevice(GD::family->getRpcDevices()->find(deviceType, 0, -1));
 		if(!peer->getRpcDevice()) return std::shared_ptr<NanoleafPeer>();
 		if(save) peer->save(true, true, false); //Save and create peerID
+        peer->initializeCentralConfig();
 		return peer;
 	}
     catch(const std::exception& ex)
