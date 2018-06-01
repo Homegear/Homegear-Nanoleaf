@@ -75,10 +75,10 @@ protected:
 	std::thread _workerThread;
     int32_t _pollingInterval = 5000;
 
-	std::mutex _searchNanoleafsMutex;
     std::atomic_bool _searching;
     std::mutex _searchDevicesMutex;
-    std::thread _searchDevicesThread;
+
+    int32_t searchDevices(bool updateOnly);
 
 	/**
 	 * Creates a new peer. The method does not add the peer to the peer arrays.
