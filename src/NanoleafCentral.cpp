@@ -69,7 +69,6 @@ void NanoleafCentral::dispose(bool wait)
 		if(_disposing) return;
 		_disposing = true;
 		_stopWorkerThread = true;
-        GD::bl->threadManager.join(_searchDevicesThread);
 		GD::out.printDebug("Debug: Waiting for worker thread of device " + std::to_string(_deviceId) + "...");
 		_bl->threadManager.join(_workerThread);
         _ssdp.reset();
@@ -684,8 +683,9 @@ std::string NanoleafCentral::handleCliCommand(std::string command)
 				index++;
 			}
 
-            searchDevicesThread(false);
-			stringStream << "Search completed. Please press the power button for five seconds on all newly added Nanoleafs." << std::endl;
+            auto newPeersCount = searchDevices(false);
+			if(newPeersCount == 0) stringStream << "Search completed. No new devices found." << std::endl;
+            else stringStream << "Search completed. Found " << newPeersCount << " new devices. Please press the power button for five seconds on all newly added Nanoleafs." << std::endl;
 			return stringStream.str();
 		}
 		else return "Unknown command.\n";
@@ -718,6 +718,7 @@ std::shared_ptr<NanoleafPeer> NanoleafCentral::createPeer(uint32_t deviceType, s
 		peer->setRpcDevice(GD::family->getRpcDevices()->find(deviceType, 0, -1));
 		if(!peer->getRpcDevice()) return std::shared_ptr<NanoleafPeer>();
 		if(save) peer->save(true, true, false); //Save and create peerID
+        peer->initializeCentralConfig();
 		return peer;
 	}
     catch(const std::exception& ex)
@@ -775,7 +776,7 @@ void NanoleafCentral::worker()
                     }
                     else countsPer10Minutes = 100;
                     _peersMutex.unlock();
-                    searchDevicesThread(true);
+                    searchDevices(true);
 				}
 
                 std::shared_ptr<NanoleafPeer> peer;
@@ -880,19 +881,21 @@ PVariable NanoleafCentral::deleteDevice(BaseLib::PRpcClientInfo clientInfo, uint
     return Variable::createError(-32500, "Unknown application error.");
 }
 
-void NanoleafCentral::searchDevicesThread(bool updateOnly)
+int32_t NanoleafCentral::searchDevices(bool updateOnly)
 {
-    std::lock_guard<std::mutex> searchDevicesGuard(_searchNanoleafsMutex);
-    _searching = true;
     try
     {
+        if(_searching) return -1;
+        std::lock_guard<std::mutex> searchDevicesGuard(_searchDevicesMutex);
+        _searching = true;
         std::string stHeader("nanoleaf_aurora:light");
         std::vector<BaseLib::SsdpInfo> searchResult;
         std::vector<std::shared_ptr<NanoleafPeer>> newPeers;
-        _ssdp->searchDevicesPassive(stHeader, 70000, searchResult, _stopWorkerThread);
+        _ssdp->searchDevices(stHeader, 5000, searchResult);
+
         for(std::vector<BaseLib::SsdpInfo>::iterator i = searchResult.begin(); i != searchResult.end(); ++i)
         {
-            if(i->getField("nl-devicename").compare(0, 15, "Nanoleaf Aurora") != 0) continue;
+            if(i->getField("nl-devicename").compare(0, 8, "Nanoleaf") != 0) continue;
             std::string mac = i->getField("nl-deviceid");
             BaseLib::HelperFunctions::stringReplace(mac, ":", "");
             if(mac.size() < 12) continue;
@@ -940,6 +943,9 @@ void NanoleafCentral::searchDevicesThread(bool updateOnly)
             }
             raiseRPCNewDevices(newIds, deviceDescriptions);
         }
+
+        _searching = false;
+        return newPeers.size();
     }
     catch(const std::exception& ex)
     {
@@ -954,16 +960,16 @@ void NanoleafCentral::searchDevicesThread(bool updateOnly)
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
     _searching = false;
+    return -1;
 }
 
 PVariable NanoleafCentral::searchDevices(BaseLib::PRpcClientInfo clientInfo)
 {
     try
     {
-        if(_searching) return PVariable(new Variable(0));
-        _searching = true;
-        _bl->threadManager.start(_searchDevicesThread, true, &NanoleafCentral::searchDevicesThread, this, false);
-        return PVariable(new Variable(-2));
+        if(_searching) return Variable::createError(-1, "Already searching.");
+        auto newPeersCount = searchDevices(false);
+        return std::make_shared<BaseLib::Variable>(newPeersCount);
     }
     catch(const std::exception& ex)
     {
