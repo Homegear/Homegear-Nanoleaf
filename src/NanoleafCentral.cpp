@@ -297,15 +297,6 @@ std::string NanoleafCentral::handleCliCommand(std::string command)
 	try
 	{
 		std::ostringstream stringStream;
-		if(_currentPeer)
-		{
-			if(command == "unselect" || command == "u")
-			{
-				_currentPeer.reset();
-				return "Peer unselected.\n";
-			}
-			return _currentPeer->handleCliCommand(command);
-		}
 		if(command == "help" || command == "h")
 		{
 			stringStream << "List of commands (shortcut in brackets):" << std::endl << std::endl;
@@ -353,7 +344,6 @@ std::string NanoleafCentral::handleCliCommand(std::string command)
 			if(!peerExists(peerID)) stringStream << "This peer is not paired to this central." << std::endl;
 			else
 			{
-				if(_currentPeer && _currentPeer->getID() == peerID) _currentPeer.reset();
 				deletePeer(peerID);
 				stringStream << "Removed peer " << std::to_string(peerID) << "." << std::endl;
 			}
@@ -615,47 +605,6 @@ std::string NanoleafCentral::handleCliCommand(std::string command)
 			}
 			return stringStream.str();
 		}
-		else if(command.compare(0, 12, "peers select") == 0 || command.compare(0, 2, "ps") == 0)
-		{
-			uint64_t id = 0;
-
-			std::stringstream stream(command);
-			std::string element;
-			int32_t offset = (command.at(1) == 's') ? 0 : 1;
-			int32_t index = 0;
-			while(std::getline(stream, element, ' '))
-			{
-				if(index < 1 + offset)
-				{
-					index++;
-					continue;
-				}
-				else if(index == 1 + offset)
-				{
-					if(element == "help") break;
-					id = BaseLib::Math::getNumber(element, false);
-					if(id == 0) return "Invalid id.\n";
-				}
-				index++;
-			}
-			if(index == 1 + offset)
-			{
-				stringStream << "Description: This command selects a peer." << std::endl;
-				stringStream << "Usage: peers select PEERID" << std::endl << std::endl;
-				stringStream << "Parameters:" << std::endl;
-				stringStream << "  PEERID:\tThe id of the peer to select. Example: 513" << std::endl;
-				return stringStream.str();
-			}
-
-			_currentPeer = getPeer(id);
-			if(!_currentPeer) stringStream << "This peer is not paired to this central." << std::endl;
-			else
-			{
-				stringStream << "Peer with id " << std::hex << std::to_string(id) << " and device type 0x" << (int32_t)_currentPeer->getDeviceType() << " selected." << std::dec << std::endl;
-				stringStream << "For information about the peer's commands type: \"help\"" << std::endl;
-			}
-			return stringStream.str();
-		}
 		else if(command.compare(0, 6, "search") == 0 || command.compare(0, 2, "sp") == 0)
 		{
 			std::stringstream stream(command);
@@ -834,9 +783,16 @@ PVariable NanoleafCentral::deleteDevice(BaseLib::PRpcClientInfo clientInfo, std:
 	try
 	{
 		if(serialNumber.empty()) return Variable::createError(-2, "Unknown device.");
-		std::shared_ptr<NanoleafPeer> peer = getPeer(serialNumber);
-		if(!peer) return Variable::createError(-2, "Unknown device.");
-		return deleteDevice(clientInfo, peer->getID(), flags);
+
+        uint64_t peerId = 0;
+
+        {
+            std::shared_ptr<NanoleafPeer> peer = getPeer(serialNumber);
+            if(!peer) return Variable::createError(-2, "Unknown device.");
+            peerId = peer->getID();
+        }
+
+		return deleteDevice(clientInfo, peerId, flags);
 	}
 	catch(const std::exception& ex)
     {
@@ -853,16 +809,19 @@ PVariable NanoleafCentral::deleteDevice(BaseLib::PRpcClientInfo clientInfo, std:
     return Variable::createError(-32500, "Unknown application error.");
 }
 
-PVariable NanoleafCentral::deleteDevice(BaseLib::PRpcClientInfo clientInfo, uint64_t peerID, int32_t flags)
+PVariable NanoleafCentral::deleteDevice(BaseLib::PRpcClientInfo clientInfo, uint64_t peerId, int32_t flags)
 {
 	try
 	{
-		if(peerID == 0) return Variable::createError(-2, "Unknown device.");
-		if(peerID >= 0x40000000) return Variable::createError(-2, "Cannot delete virtual device.");
-		std::shared_ptr<NanoleafPeer> peer = getPeer(peerID);
-		if(!peer) return Variable::createError(-2, "Unknown device.");
+		if(peerId == 0) return Variable::createError(-2, "Unknown device.");
+		if(peerId >= 0x40000000) return Variable::createError(-2, "Cannot delete virtual device.");
 
-		deletePeer(peer->getID());
+        {
+            std::shared_ptr<NanoleafPeer> peer = getPeer(peerId);
+            if(!peer) return Variable::createError(-2, "Unknown device.");
+        }
+
+		deletePeer(peerId);
 
 		return PVariable(new Variable(VariableType::tVoid));
 	}
