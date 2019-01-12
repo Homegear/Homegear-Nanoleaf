@@ -34,7 +34,7 @@
 namespace Nanoleaf
 {
 
-Nanoleaf::Nanoleaf(BaseLib::SharedObjects* bl, BaseLib::Systems::DeviceFamily::IFamilyEventSink* eventHandler) : BaseLib::Systems::DeviceFamily(bl, eventHandler, NANOLEAF_FAMILY_ID, NANOLEAF_FAMILY_NAME)
+Nanoleaf::Nanoleaf(BaseLib::SharedObjects* bl, BaseLib::Systems::IFamilyEventSink* eventHandler) : BaseLib::Systems::DeviceFamily(bl, eventHandler, NANOLEAF_FAMILY_ID, NANOLEAF_FAMILY_NAME)
 {
 	GD::bl = _bl;
 	GD::family = this;

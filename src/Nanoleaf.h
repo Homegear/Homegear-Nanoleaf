@@ -41,7 +41,7 @@ class NanoleafCentral;
 class Nanoleaf : public BaseLib::Systems::DeviceFamily
 {
 public:
-	Nanoleaf(BaseLib::SharedObjects* bl, BaseLib::Systems::DeviceFamily::IFamilyEventSink* eventHandler);
+	Nanoleaf(BaseLib::SharedObjects* bl, BaseLib::Systems::IFamilyEventSink* eventHandler);
 	virtual ~Nanoleaf();
 	virtual void dispose();
 
