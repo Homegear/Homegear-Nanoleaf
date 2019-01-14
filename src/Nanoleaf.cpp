@@ -1,4 +1,4 @@
-/* Copyright 2013-2016 Sathya Laufer
+/* Copyright 2013-2019 Homegear GmbH
  *
  * Homegear is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@
 namespace Nanoleaf
 {
 
-Nanoleaf::Nanoleaf(BaseLib::SharedObjects* bl, BaseLib::Systems::DeviceFamily::IFamilyEventSink* eventHandler) : BaseLib::Systems::DeviceFamily(bl, eventHandler, NANOLEAF_FAMILY_ID, NANOLEAF_FAMILY_NAME)
+Nanoleaf::Nanoleaf(BaseLib::SharedObjects* bl, BaseLib::Systems::IFamilyEventSink* eventHandler) : BaseLib::Systems::DeviceFamily(bl, eventHandler, NANOLEAF_FAMILY_ID, NANOLEAF_FAMILY_NAME)
 {
 	GD::bl = _bl;
 	GD::family = this;
