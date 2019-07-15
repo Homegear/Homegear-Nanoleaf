@@ -30,6 +30,8 @@
 #include "NanoleafCentral.h"
 #include "GD.h"
 
+#include <iomanip>
+
 namespace Nanoleaf {
 
 NanoleafCentral::NanoleafCentral(ICentralEventSink* eventHandler) : BaseLib::Systems::ICentral(NANOLEAF_FAMILY_ID, GD::bl, eventHandler)
