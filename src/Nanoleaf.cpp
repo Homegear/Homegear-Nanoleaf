@@ -31,6 +31,8 @@
 #include "NanoleafCentral.h"
 #include "GD.h"
 
+#include <iomanip>
+
 namespace Nanoleaf
 {
 
