@@ -328,7 +328,7 @@
 						<index>1</index>
 					</value>
 					<value>
-						<id>effects</id>
+						<id>effect</id>
 						<index>2</index>
 					</value>
 				</logicalEnumeration>
