@@ -1,0 +1,4 @@
+---
+# {{{ Pairing
+l10n.nanoleaf.pressPowerButton: 'To connect to Nanoleaf peer %variable0% (Name: %variable1%, IP-Adresse: %variable2%) please press the power button on your Nanoleaf for five seconds.'
+# }}}
