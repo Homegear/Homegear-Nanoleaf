@@ -280,8 +280,9 @@ bool NanoleafPeer::getAllValuesHook2(PRpcClientInfo clientInfo, PParameter param
 			if(parameter->id == "PEER_ID")
 			{
 				std::vector<uint8_t> parameterData;
-				parameter->convertToPacket(PVariable(new Variable((int32_t)_peerID)), parameterData);
-				valuesCentral[channel][parameter->id].setBinaryData(parameterData);
+				auto& rpcConfigurationParameter = valuesCentral[channel][parameter->id];
+				parameter->convertToPacket(PVariable(new Variable((int32_t)_peerID)), rpcConfigurationParameter.invert(), parameterData);
+                rpcConfigurationParameter.setBinaryData(parameterData);
 			}
 		}
 	}
@@ -375,8 +376,8 @@ void NanoleafPeer::getValuesFromPacket(BaseLib::PVariable json, std::vector<Fram
                         //This is a little nasty and costs a lot of resources, but we need to run the data through the packet converter
                         std::vector<uint8_t> encodedData;
                         _binaryEncoder->encodeResponse(currentJson, encodedData);
-                        PVariable data = (*k)->convertFromPacket(encodedData, true);
-                        (*k)->convertToPacket(data, currentFrameValues.values[(*k)->id].value);
+                        PVariable data = (*k)->convertFromPacket(encodedData, false, true);
+                        (*k)->convertToPacket(data, false, currentFrameValues.values[(*k)->id].value);
                     }
                 }
             }
@@ -442,7 +443,7 @@ void NanoleafPeer::packetReceived(PVariable json)
                         }
 
                         valueKeys[*j]->push_back(i->first);
-                        rpcValues[*j]->push_back(parameter.rpcParameter->convertFromPacket(i->second.value, true));
+                        rpcValues[*j]->push_back(parameter.rpcParameter->convertFromPacket(i->second.value, parameter.invert(), true));
                     }
                 }
             }
@@ -571,8 +572,9 @@ PVariable NanoleafPeer::getParamset(BaseLib::PRpcClientInfo clientInfo, int32_t 
 				if(!i->second->readable) continue;
 				if(valuesCentral.find(channel) == valuesCentral.end()) continue;
 				if(valuesCentral[channel].find(i->second->id) == valuesCentral[channel].end()) continue;
-				std::vector<uint8_t> parameterData = valuesCentral[channel][i->second->id].getBinaryData();
-				element = i->second->convertFromPacket(parameterData);
+				auto& parameter = valuesCentral[channel][i->second->id];
+				std::vector<uint8_t> parameterData = parameter.getBinaryData();
+				element = i->second->convertFromPacket(parameterData, parameter.invert(), false);
 			}
 
 			if(!element) continue;
@@ -595,10 +597,10 @@ PVariable NanoleafPeer::setValue(BaseLib::PRpcClientInfo clientInfo, uint32_t ch
         Peer::setValue(clientInfo, channel, valueKey, value, wait); //Ignore result, otherwise setHomegerValue might not be executed
         if(_disposing) return Variable::createError(-32500, "Peer is disposing.");
         if(valueKey.empty()) return Variable::createError(-5, "Value key is empty.");
-        if(channel == 0 && serviceMessages->set(valueKey, value->booleanValue)) return PVariable(new Variable(VariableType::tVoid));
-        std::unordered_map<uint32_t, std::unordered_map<std::string, RpcConfigurationParameter>>::iterator channelIterator = valuesCentral.find(channel);
+        if(channel == 0 && serviceMessages->set(valueKey, value->booleanValue)) return std::make_shared<Variable>(VariableType::tVoid);
+        auto channelIterator = valuesCentral.find(channel);
         if(channelIterator == valuesCentral.end()) return Variable::createError(-2, "Unknown channel.");
-        std::unordered_map<std::string, RpcConfigurationParameter>::iterator parameterIterator = channelIterator->second.find(valueKey);
+        auto parameterIterator = channelIterator->second.find(valueKey);
         if(parameterIterator == channelIterator->second.end()) return Variable::createError(-5, "Unknown parameter (1).");
         PParameter rpcParameter = parameterIterator->second.rpcParameter;
         if(!rpcParameter) return Variable::createError(-5, "Unknown parameter (2).");
@@ -610,12 +612,12 @@ PVariable NanoleafPeer::setValue(BaseLib::PRpcClientInfo clientInfo, uint32_t ch
         if(rpcParameter->physical->operationType == IPhysical::OperationType::Enum::store)
         {
             std::vector<uint8_t> parameterData;
-            rpcParameter->convertToPacket(value, parameterData);
+            rpcParameter->convertToPacket(value, parameter.invert(), parameterData);
             parameter.setBinaryData(parameterData);
             if(parameter.databaseId > 0) saveParameter(parameter.databaseId, parameterData);
             else saveParameter(0, ParameterGroup::Type::Enum::variables, channel, valueKey, parameterData);
 
-            value = rpcParameter->convertFromPacket(parameterData, false);
+            value = rpcParameter->convertFromPacket(parameterData, parameter.invert(), false);
             if(rpcParameter->readable)
             {
                 valueKeys->push_back(valueKey);
@@ -636,12 +638,12 @@ PVariable NanoleafPeer::setValue(BaseLib::PRpcClientInfo clientInfo, uint32_t ch
         if(packetIterator == _rpcDevice->packetsById.end()) return Variable::createError(-6, "No frame was found for parameter " + valueKey);
         PPacket frame = packetIterator->second;
         std::vector<uint8_t> parameterData;
-        rpcParameter->convertToPacket(value, parameterData);
+        rpcParameter->convertToPacket(value, parameter.invert(), parameterData);
         parameter.setBinaryData(parameterData);
         if(parameter.databaseId > 0) saveParameter(parameter.databaseId, parameterData);
         else saveParameter(0, ParameterGroup::Type::Enum::variables, channel, valueKey, parameterData);
 
-        value = rpcParameter->convertFromPacket(parameterData, false);
+        value = rpcParameter->convertFromPacket(parameterData, parameter.invert(), false);
         if(_bl->debugLevel > 4) GD::out.printDebug("Debug: " + valueKey + " of peer " + std::to_string(_peerID) + " with serial number " + _serialNumber + ":" + std::to_string(channel) + " was set to " + BaseLib::HelperFunctions::getHexString(parameterData) + ", " + value->print(false, false, true) + ".");
 
         valueKeys->push_back(valueKey);
