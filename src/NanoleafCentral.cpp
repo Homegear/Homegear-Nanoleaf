@@ -79,14 +79,6 @@ void NanoleafCentral::dispose(bool wait)
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
-    }
 }
 
 void NanoleafCentral::loadPeers()
@@ -114,16 +106,6 @@ void NanoleafCentral::loadPeers()
     	GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     	_peersMutex.unlock();
     }
-    catch(BaseLib::Exception& ex)
-    {
-    	GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    	_peersMutex.unlock();
-    }
-    catch(...)
-    {
-    	GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
-    	_peersMutex.unlock();
-    }
 }
 
 void NanoleafCentral::loadVariables()
@@ -135,14 +117,6 @@ void NanoleafCentral::loadVariables()
 	catch(const std::exception& ex)
     {
     	GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(BaseLib::Exception& ex)
-    {
-    	GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-    	GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
 }
 
@@ -164,14 +138,6 @@ void NanoleafCentral::savePeers(bool full)
     {
     	GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
-    catch(BaseLib::Exception& ex)
-    {
-    	GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-    	GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
-    }
 }
 
 void NanoleafCentral::saveVariables()
@@ -183,14 +149,6 @@ void NanoleafCentral::saveVariables()
 	catch(const std::exception& ex)
     {
     	GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(BaseLib::Exception& ex)
-    {
-    	GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-    	GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
 }
 
@@ -206,14 +164,6 @@ std::shared_ptr<NanoleafPeer> NanoleafCentral::getPeer(uint64_t id)
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
-    }
     return std::shared_ptr<NanoleafPeer>();
 }
 
@@ -228,14 +178,6 @@ std::shared_ptr<NanoleafPeer> NanoleafCentral::getPeer(std::string serialNumber)
 	catch(const std::exception& ex)
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
     return std::shared_ptr<NanoleafPeer>();
 }
@@ -283,14 +225,6 @@ void NanoleafCentral::deletePeer(uint64_t id)
 	catch(const std::exception& ex)
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
 }
 
@@ -548,16 +482,6 @@ std::string NanoleafCentral::handleCliCommand(std::string command)
 				_peersMutex.unlock();
 				GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
 			}
-			catch(BaseLib::Exception& ex)
-			{
-				_peersMutex.unlock();
-				GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-			}
-			catch(...)
-			{
-				_peersMutex.unlock();
-				GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
-			}
 		}
 		else if(command.compare(0, 13, "peers setname") == 0 || command.compare(0, 2, "pn") == 0)
 		{
@@ -645,14 +569,6 @@ std::string NanoleafCentral::handleCliCommand(std::string command)
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
-    }
     return "Error executing command. See log file for more details.\n";
 }
 
@@ -675,14 +591,6 @@ std::shared_ptr<NanoleafPeer> NanoleafCentral::createPeer(uint32_t deviceType, s
     catch(const std::exception& ex)
     {
     	GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(BaseLib::Exception& ex)
-    {
-    	GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-    	GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
     return std::shared_ptr<NanoleafPeer>();
 }
@@ -755,27 +663,11 @@ void NanoleafCentral::worker()
 			{
 				GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
 			}
-			catch(BaseLib::Exception& ex)
-			{
-				GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-			}
-			catch(...)
-			{
-				GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
-			}
 		}
 	}
 	catch(const std::exception& ex)
 	{
 			GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
 }
 
@@ -800,14 +692,6 @@ PVariable NanoleafCentral::deleteDevice(BaseLib::PRpcClientInfo clientInfo, std:
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
-    }
     return Variable::createError(-32500, "Unknown application error.");
 }
 
@@ -830,14 +714,6 @@ PVariable NanoleafCentral::deleteDevice(BaseLib::PRpcClientInfo clientInfo, uint
 	catch(const std::exception& ex)
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
     return Variable::createError(-32500, "Unknown application error.");
 }
@@ -912,19 +788,11 @@ int32_t NanoleafCentral::searchDevices(bool updateOnly)
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
-    }
     _searching = false;
     return -1;
 }
 
-PVariable NanoleafCentral::searchDevices(BaseLib::PRpcClientInfo clientInfo)
+PVariable NanoleafCentral::searchDevices(BaseLib::PRpcClientInfo clientInfo, const std::string& interfaceId)
 {
     try
     {
@@ -935,14 +803,6 @@ PVariable NanoleafCentral::searchDevices(BaseLib::PRpcClientInfo clientInfo)
     catch(const std::exception& ex)
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
     return Variable::createError(-32500, "Unknown application error.");
 }

@@ -45,14 +45,6 @@ std::shared_ptr<BaseLib::Systems::ICentral> NanoleafPeer::getCentral()
 	{
 		GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
 	}
-	catch(BaseLib::Exception& ex)
-	{
-		GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-	}
-	catch(...)
-	{
-		GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
-	}
 	return std::shared_ptr<BaseLib::Systems::ICentral>();
 }
 
@@ -96,14 +88,6 @@ void NanoleafPeer::setIp(std::string value)
 	{
 		GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
 	}
-	catch(BaseLib::Exception& ex)
-	{
-		GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-	}
-	catch(...)
-	{
-		GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
-	}
 }
 
 void NanoleafPeer::worker()
@@ -133,10 +117,14 @@ void NanoleafPeer::worker()
             _httpClient->sendRequest(postRequest, http, false);
             if(http.getContentSize() == 0)
             {
+                auto data = std::make_shared<BaseLib::Variable>(BaseLib::VariableType::tStruct);
+                data->structValue->emplace("IP_ADDRESS", std::make_shared<BaseLib::Variable>(_ip));
+                _bl->globalServiceMessages.set(NANOLEAF_FAMILY_ID, 0, std::to_string(_peerID), BaseLib::HelperFunctions::getTimeSeconds(), "l10n.nanoleaf.pressPowerButton", std::list<std::string>{ std::to_string(_peerID), getName(), _ip }, data, 1);
                 _bl->out.printWarning("Warning: Peer " + std::to_string(_peerID) + " has no auth token set. Please press the power button on your Nanoleaf controller for five seconds.");
             }
             else
             {
+                _bl->globalServiceMessages.unset(NANOLEAF_FAMILY_ID, 0, std::to_string(_peerID), "l10n.nanoleaf.pressPowerButton");
                 auto json = _jsonDecoder->decode(http.getContent());
                 auto authTokenIterator = json->structValue->find("auth_token");
                 if(authTokenIterator != json->structValue->end())
@@ -147,18 +135,10 @@ void NanoleafPeer::worker()
             }
         }
     }
-    catch(BaseLib::Exception& ex)
+    catch(const std::exception& ex)
     {
         serviceMessages->setUnreach(true, false);
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(const std::exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
 }
 
@@ -181,14 +161,6 @@ std::string NanoleafPeer::handleCliCommand(std::string command)
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
-    }
     return "Error executing command. See log file for more details.\n";
 }
 
@@ -201,14 +173,6 @@ void NanoleafPeer::save(bool savePeer, bool variables, bool centralConfig)
 	catch(const std::exception& ex)
     {
     	GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(BaseLib::Exception& ex)
-    {
-    	GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-    	GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
 }
 
@@ -242,14 +206,6 @@ void NanoleafPeer::loadVariables(BaseLib::Systems::ICentral* central, std::share
     {
     	GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
-    catch(BaseLib::Exception& ex)
-    {
-    	GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-    	GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
-    }
 }
 
 bool NanoleafPeer::load(BaseLib::Systems::ICentral* central)
@@ -279,14 +235,6 @@ bool NanoleafPeer::load(BaseLib::Systems::ICentral* central)
     {
     	GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
-    catch(BaseLib::Exception& ex)
-    {
-    	GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-    	GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
-    }
     return false;
 }
 
@@ -301,14 +249,6 @@ void NanoleafPeer::saveVariables()
 	catch(const std::exception& ex)
     {
     	GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(BaseLib::Exception& ex)
-    {
-    	GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-    	GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
 }
 
@@ -328,14 +268,6 @@ PParameterGroup NanoleafPeer::getParameterSet(int32_t channel, ParameterGroup::T
 	{
 		GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
 	}
-	catch(BaseLib::Exception& ex)
-	{
-		GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-	}
-	catch(...)
-	{
-		GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
-	}
 	return PParameterGroup();
 }
 
@@ -348,22 +280,15 @@ bool NanoleafPeer::getAllValuesHook2(PRpcClientInfo clientInfo, PParameter param
 			if(parameter->id == "PEER_ID")
 			{
 				std::vector<uint8_t> parameterData;
-				parameter->convertToPacket(PVariable(new Variable((int32_t)_peerID)), parameterData);
-				valuesCentral[channel][parameter->id].setBinaryData(parameterData);
+				auto& rpcConfigurationParameter = valuesCentral[channel][parameter->id];
+				parameter->convertToPacket(PVariable(new Variable((int32_t)_peerID)), rpcConfigurationParameter.mainRole(), parameterData);
+                rpcConfigurationParameter.setBinaryData(parameterData);
 			}
 		}
 	}
 	catch(const std::exception& ex)
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
     return false;
 }
@@ -451,8 +376,8 @@ void NanoleafPeer::getValuesFromPacket(BaseLib::PVariable json, std::vector<Fram
                         //This is a little nasty and costs a lot of resources, but we need to run the data through the packet converter
                         std::vector<uint8_t> encodedData;
                         _binaryEncoder->encodeResponse(currentJson, encodedData);
-                        PVariable data = (*k)->convertFromPacket(encodedData, true);
-                        (*k)->convertToPacket(data, currentFrameValues.values[(*k)->id].value);
+                        PVariable data = (*k)->convertFromPacket(encodedData, Role(), true);
+                        (*k)->convertToPacket(data, Role(), currentFrameValues.values[(*k)->id].value);
                     }
                 }
             }
@@ -462,14 +387,6 @@ void NanoleafPeer::getValuesFromPacket(BaseLib::PVariable json, std::vector<Fram
 	catch(const std::exception& ex)
     {
     	GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(BaseLib::Exception& ex)
-    {
-    	GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-    	GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
 }
 
@@ -526,7 +443,7 @@ void NanoleafPeer::packetReceived(PVariable json)
                         }
 
                         valueKeys[*j]->push_back(i->first);
-                        rpcValues[*j]->push_back(parameter.rpcParameter->convertFromPacket(i->second.value, true));
+                        rpcValues[*j]->push_back(parameter.rpcParameter->convertFromPacket(i->second.value, parameter.mainRole(), true));
                     }
                 }
             }
@@ -548,14 +465,6 @@ void NanoleafPeer::packetReceived(PVariable json)
     {
     	GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
-    catch(BaseLib::Exception& ex)
-    {
-    	GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-    	GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
-    }
 }
 
 std::string NanoleafPeer::getFirmwareVersionString(int32_t firmwareVersion)
@@ -567,14 +476,6 @@ std::string NanoleafPeer::getFirmwareVersionString(int32_t firmwareVersion)
 	catch(const std::exception& ex)
     {
     	GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(BaseLib::Exception& ex)
-    {
-    	GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-    	GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
 	return "";
 }
@@ -596,14 +497,6 @@ PVariable NanoleafPeer::getParamsetDescription(BaseLib::PRpcClientInfo clientInf
 	catch(const std::exception& ex)
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
     return Variable::createError(-32500, "Unknown application error.");
 }
@@ -644,14 +537,6 @@ PVariable NanoleafPeer::putParamset(BaseLib::PRpcClientInfo clientInfo, int32_t 
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
-    }
     return Variable::createError(-32500, "Unknown application error.");
 }
 
@@ -687,8 +572,9 @@ PVariable NanoleafPeer::getParamset(BaseLib::PRpcClientInfo clientInfo, int32_t 
 				if(!i->second->readable) continue;
 				if(valuesCentral.find(channel) == valuesCentral.end()) continue;
 				if(valuesCentral[channel].find(i->second->id) == valuesCentral[channel].end()) continue;
-				std::vector<uint8_t> parameterData = valuesCentral[channel][i->second->id].getBinaryData();
-				element = i->second->convertFromPacket(parameterData);
+				auto& parameter = valuesCentral[channel][i->second->id];
+				std::vector<uint8_t> parameterData = parameter.getBinaryData();
+				element = i->second->convertFromPacket(parameterData, parameter.mainRole(), false);
 			}
 
 			if(!element) continue;
@@ -701,14 +587,6 @@ PVariable NanoleafPeer::getParamset(BaseLib::PRpcClientInfo clientInfo, int32_t 
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
     }
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
-    }
     return Variable::createError(-32500, "Unknown application error.");
 }
 
@@ -719,10 +597,10 @@ PVariable NanoleafPeer::setValue(BaseLib::PRpcClientInfo clientInfo, uint32_t ch
         Peer::setValue(clientInfo, channel, valueKey, value, wait); //Ignore result, otherwise setHomegerValue might not be executed
         if(_disposing) return Variable::createError(-32500, "Peer is disposing.");
         if(valueKey.empty()) return Variable::createError(-5, "Value key is empty.");
-        if(channel == 0 && serviceMessages->set(valueKey, value->booleanValue)) return PVariable(new Variable(VariableType::tVoid));
-        std::unordered_map<uint32_t, std::unordered_map<std::string, RpcConfigurationParameter>>::iterator channelIterator = valuesCentral.find(channel);
+        if(channel == 0 && serviceMessages->set(valueKey, value->booleanValue)) return std::make_shared<Variable>(VariableType::tVoid);
+        auto channelIterator = valuesCentral.find(channel);
         if(channelIterator == valuesCentral.end()) return Variable::createError(-2, "Unknown channel.");
-        std::unordered_map<std::string, RpcConfigurationParameter>::iterator parameterIterator = channelIterator->second.find(valueKey);
+        auto parameterIterator = channelIterator->second.find(valueKey);
         if(parameterIterator == channelIterator->second.end()) return Variable::createError(-5, "Unknown parameter (1).");
         PParameter rpcParameter = parameterIterator->second.rpcParameter;
         if(!rpcParameter) return Variable::createError(-5, "Unknown parameter (2).");
@@ -734,12 +612,12 @@ PVariable NanoleafPeer::setValue(BaseLib::PRpcClientInfo clientInfo, uint32_t ch
         if(rpcParameter->physical->operationType == IPhysical::OperationType::Enum::store)
         {
             std::vector<uint8_t> parameterData;
-            rpcParameter->convertToPacket(value, parameterData);
+            rpcParameter->convertToPacket(value, parameter.mainRole(), parameterData);
             parameter.setBinaryData(parameterData);
             if(parameter.databaseId > 0) saveParameter(parameter.databaseId, parameterData);
             else saveParameter(0, ParameterGroup::Type::Enum::variables, channel, valueKey, parameterData);
 
-            value = rpcParameter->convertFromPacket(parameterData, false);
+            value = rpcParameter->convertFromPacket(parameterData, parameter.mainRole(), false);
             if(rpcParameter->readable)
             {
                 valueKeys->push_back(valueKey);
@@ -760,12 +638,12 @@ PVariable NanoleafPeer::setValue(BaseLib::PRpcClientInfo clientInfo, uint32_t ch
         if(packetIterator == _rpcDevice->packetsById.end()) return Variable::createError(-6, "No frame was found for parameter " + valueKey);
         PPacket frame = packetIterator->second;
         std::vector<uint8_t> parameterData;
-        rpcParameter->convertToPacket(value, parameterData);
+        rpcParameter->convertToPacket(value, parameter.mainRole(), parameterData);
         parameter.setBinaryData(parameterData);
         if(parameter.databaseId > 0) saveParameter(parameter.databaseId, parameterData);
         else saveParameter(0, ParameterGroup::Type::Enum::variables, channel, valueKey, parameterData);
 
-        value = rpcParameter->convertFromPacket(parameterData, false);
+        value = rpcParameter->convertFromPacket(parameterData, parameter.mainRole(), false);
         if(_bl->debugLevel > 4) GD::out.printDebug("Debug: " + valueKey + " of peer " + std::to_string(_peerID) + " with serial number " + _serialNumber + ":" + std::to_string(channel) + " was set to " + BaseLib::HelperFunctions::getHexString(parameterData) + ", " + value->print(false, false, true) + ".");
 
         valueKeys->push_back(valueKey);
@@ -858,14 +736,6 @@ PVariable NanoleafPeer::setValue(BaseLib::PRpcClientInfo clientInfo, uint32_t ch
 	catch(const std::exception& ex)
     {
         GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(BaseLib::Exception& ex)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__, ex.what());
-    }
-    catch(...)
-    {
-        GD::out.printEx(__FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
     return Variable::createError(-32500, "Unknown application error. See error log for more details.");
 }

@@ -66,7 +66,7 @@ public:
 
 	virtual PVariable deleteDevice(BaseLib::PRpcClientInfo clientInfo, std::string serialNumber, int32_t flags);
 	virtual PVariable deleteDevice(BaseLib::PRpcClientInfo clientInfo, uint64_t peerID, int32_t flags);
-	virtual PVariable searchDevices(BaseLib::PRpcClientInfo clientInfo);
+	virtual PVariable searchDevices(BaseLib::PRpcClientInfo clientInfo, const std::string& interfaceId);
 protected:
     std::unique_ptr<BaseLib::Ssdp> _ssdp;
 	std::atomic_bool _shuttingDown;
