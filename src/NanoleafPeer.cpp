@@ -119,7 +119,7 @@ void NanoleafPeer::worker()
             {
                 auto data = std::make_shared<BaseLib::Variable>(BaseLib::VariableType::tStruct);
                 data->structValue->emplace("IP_ADDRESS", std::make_shared<BaseLib::Variable>(_ip));
-                _bl->globalServiceMessages.set(NANOLEAF_FAMILY_ID, 0, std::to_string(_peerID), BaseLib::HelperFunctions::getTimeSeconds(), "l10n.nanoleaf.pressPowerButton", std::list<std::string>{ std::to_string(_peerID), getName(), _ip }, data, 1);
+                _bl->globalServiceMessages.set(NANOLEAF_FAMILY_ID, "", 0, std::to_string(_peerID), BaseLib::HelperFunctions::getTimeSeconds(), "l10n.nanoleaf.pressPowerButton", std::list<std::string>{ std::to_string(_peerID), getName(), _ip }, data, 1);
                 _bl->out.printWarning("Warning: Peer " + std::to_string(_peerID) + " has no auth token set. Please press the power button on your Nanoleaf controller for five seconds.");
             }
             else
