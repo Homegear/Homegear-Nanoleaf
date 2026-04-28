@@ -30,6 +30,8 @@
 #ifndef NANOLEAF_H_
 #define NANOLEAF_H_
 
+#include <cstdint>
+
 #include <homegear-base/BaseLib.h>
 
 using namespace BaseLib;
