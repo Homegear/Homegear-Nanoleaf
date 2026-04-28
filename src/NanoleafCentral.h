@@ -30,6 +30,8 @@
 #ifndef NANOLEAFCENTRAL_H_
 #define NANOLEAFCENTRAL_H_
 
+#include <cstdint>
+
 #include <homegear-base/BaseLib.h>
 #include "NanoleafPeer.h"
 
